@@ -528,9 +528,22 @@ theorem inter_nested_closed_inv_is_closed_inv_nonempty
     (f : α → α) (C : Set (Set α))
     (hc :  IsChain (· ⊆ ·) C) (hn : ∀ V ∈ C, IsCIN f V) :
     IsCIN f (⋂₀ C) := by
-  have h0 : (⋂₀ C).Nonempty := sorry
+  have h0 : (⋂₀ C).Nonempty :=
+
+    sorry
   have h1 : IsClosed (⋂₀ C) := isClosed_sInter (fun V a ↦ (hn V a).closed)
-  have h2 : IsInvariant (fun n x ↦ f^[n] x) (⋂₀ C) := sorry
+  have h2 : IsInvariant (fun n x ↦ f^[n] x) (⋂₀ C) := by
+    unfold IsInvariant
+    intro n
+    unfold MapsTo
+    intros x hx
+    have h2a : ∀ U ∈ C, x ∈ U := by
+      exact fun U a ↦ hx U a
+    have h2b : ∀ U ∈ C, (fun n x ↦ f^[n] x) n x ∈ U := by
+      intros U h2c
+
+      sorry
+    exact h2b
   exact ⟨h0, h1, h2⟩
 
 /-- Every invariant nonempty closed subset contains at least a minimal invariant subset. -/
