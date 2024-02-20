@@ -537,16 +537,10 @@ theorem inter_nested_closed_inv_is_closed_inv_nonempty
     sorry
   have h1 : IsClosed (⋂₀ C) := isClosed_sInter (fun V a ↦ (hn V a).closed)
   have h2 : IsInvariant (fun n x ↦ f^[n] x) (⋂₀ C) := by
-    unfold IsInvariant
-    intro n
-    unfold MapsTo
-    intros x hx
-    have h2a : ∀ U ∈ C, x ∈ U := by
-      exact fun U a ↦ hx U a
+    intros n x hx
     have h2b : ∀ U ∈ C, (fun n x ↦ f^[n] x) n x ∈ U := by
       intros U h2c
-
-      sorry
+      exact (hn U h2c).invariant n (hx U h2c)
     exact h2b
   exact ⟨h0, h1, h2⟩
 
