@@ -507,34 +507,38 @@ theorem nonempty_invariant_closed_subset_has_minimalSubset
 theorem recurrentSet_nonempty [Nonempty α]: Set.Nonempty (recurrentSet f) := by
   sorry
 
-/- Here follows an alternative definition of minimal and corresponding proofs. -/
+/-
+Here follows an alternative definition of minimal and corresponding proofs.
+TODO: Prove the equivalence of the two definitions.
+-/
 
-/-- A non-empty, closed and invariant set. -/
-structure ClosedInvariantNonempty (f : α → α) (U : Set α) : Prop :=
+/-- Is a closed, invariant and nonempty set. -/
+structure IsCIN (f : α → α) (U : Set α) : Prop :=
   (nonempty : U.Nonempty)
   (closed : IsClosed U)
   (invariant : IsInvariant (fun n x ↦ f^[n] x) U)
 
-structure Minimal (f : α → α) (U : Set α) : Prop :=
-  (closedInvariant : ClosedInvariantNonempty f U)
-  (minimal : ∀ (V : Set α), V ⊆ U ∧ ClosedInvariantNonempty f V → V = U)
+/-- A set is minimal if it is closed, invariant and nonempty and no proper subset satisfies these same properties. -/
+structure IsMinimalAlt (f : α → α) (U : Set α) : Prop :=
+  (closedInvariant : IsCIN f U)
+  (minimal : ∀ (V : Set α), V ⊆ U ∧ IsCIN f V → V = U)
 
  /- The intersection of nested nonempty closed invariant sets is nonempty, closed and invariant. -/
 theorem inter_nested_closed_inv_is_closed_inv_nonempty
     (f : α → α) (C : Set (Set α))
-    (hc :  IsChain (· ⊆ ·) C) (hn : ∀ V ∈ C, ClosedInvariantNonempty f V) :
-    ClosedInvariantNonempty f (⋂₀ C) := by
+    (hc :  IsChain (· ⊆ ·) C) (hn : ∀ V ∈ C, IsCIN f V) :
+    IsCIN f (⋂₀ C) := by
   have h0 : (⋂₀ C).Nonempty := sorry
-  have h1 : IsClosed (⋂₀ C) := sorry
+  have h1 : IsClosed (⋂₀ C) := isClosed_sInter (fun V a ↦ (hn V a).closed)
   have h2 : IsInvariant (fun n x ↦ f^[n] x) (⋂₀ C) := sorry
   exact ⟨h0, h1, h2⟩
 
 /-- Every invariant nonempty closed subset contains at least a minimal invariant subset. -/
 theorem exists_minimal_set
-    (U : Set α) (h : ClosedInvariantNonempty f U) :
-    ∃ V : Set α, V ⊆ U ∧ (Minimal f V) := by
+    (U : Set α) (h : IsCIN f U) :
+    ∃ V : Set α, V ⊆ U ∧ (IsMinimalAlt f V) := by
   /- Consider `S` the set of invariant nonempty closed subsets. -/
-  let S : Set (Set α) := {V | V ⊆ U ∧ ClosedInvariantNonempty f V}
+  let S : Set (Set α) := {V | V ⊆ U ∧ IsCIN f V}
   /- Every totally ordered subset of `S` has a lower bound. -/
   have h0 : ∀ C ⊆ S, IsChain (· ⊆ ·) C → Set.Nonempty C → ∃ lb ∈ S, ∀ U' ∈ C, lb ⊆ U' := by
     intros C h1 h2 h3
@@ -542,7 +546,7 @@ theorem exists_minimal_set
     let lb := ⋂₀ C
     use lb
     /- We show that `lb` has is closed, invariant and nonempty. -/
-    have h4 : ∀ V ∈ C, ClosedInvariantNonempty f V := by
+    have h4 : ∀ V ∈ C, IsCIN f V := by
       intro V h5
       exact (h1 h5).right
     have h5 := inter_nested_closed_inv_is_closed_inv_nonempty f C h2 h4
@@ -557,7 +561,7 @@ theorem exists_minimal_set
   obtain ⟨V, h1, h2⟩ := zorn_superset_nonempty S h0 U ⟨Eq.subset rfl,h⟩
   use V
   /- Rephrase the conclusion. -/
-  have h3 : ∀ (V' : Set α), V' ⊆ V ∧ ClosedInvariantNonempty f V' → V' = V := by
+  have h3 : ∀ (V' : Set α), V' ⊆ V ∧ IsCIN f V' → V' = V := by
     intros V' h4
     exact h2.right V' ⟨(subset_trans h4.left h1.left), h4.right⟩ h4.left
   exact ⟨h1.left, h1.right, h3⟩
