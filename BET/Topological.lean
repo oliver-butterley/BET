@@ -519,11 +519,15 @@ structure Minimal (f : α → α) (U : Set α) : Prop :=
   (closedInvariant : ClosedInvariantNonempty f U)
   (minimal : ∀ (V : Set α), V ⊆ U ∧ ClosedInvariantNonempty f V → V = U)
 
- /- In a compact space, the intersection of nested nonempty closed invariant sets is nonempty, closed and invariant. -/
+ /- The intersection of nested nonempty closed invariant sets is nonempty, closed and invariant. -/
 theorem inter_nested_closed_inv_is_closed_inv_nonempty
-    (f : α → α) (C : Set (Set α)) (hc :  IsChain (· ⊆ ·) C) (hn : ∀ V ∈ C, ClosedInvariantNonempty f V) :
+    (f : α → α) (C : Set (Set α))
+    (hc :  IsChain (· ⊆ ·) C) (hn : ∀ V ∈ C, ClosedInvariantNonempty f V) :
     ClosedInvariantNonempty f (⋂₀ C) := by
-  sorry
+  have h0 : (⋂₀ C).Nonempty := sorry
+  have h1 : IsClosed (⋂₀ C) := sorry
+  have h2 : IsInvariant (fun n x ↦ f^[n] x) (⋂₀ C) := sorry
+  exact ⟨h0, h1, h2⟩
 
 /-- Every invariant nonempty closed subset contains at least a minimal invariant subset. -/
 theorem exists_minimal_set
