@@ -507,4 +507,58 @@ theorem nonempty_invariant_closed_subset_has_minimalSubset
 theorem recurrentSet_nonempty [Nonempty α]: Set.Nonempty (recurrentSet f) := by
   sorry
 
+/- Here follows an alternative definition of minimal and corresponding proofs. -/
+
+/-- A non-empty, closed and invariant set. -/
+structure ClosedInvariantNonempty (f : α → α) (U : Set α) : Prop :=
+  (nonempty : U.Nonempty)
+  (closed : IsClosed U)
+  (invariant : IsInvariant (fun n x ↦ f^[n] x) U)
+
+structure Minimal (f : α → α) (U : Set α) : Prop :=
+  (closedInvariant : ClosedInvariantNonempty f U)
+  (minimal : ∀ (V : Set α), V ⊆ U ∧ ClosedInvariantNonempty f V → V = U)
+
+ /- In a compact space, the intersection of nested nonempty closed invariant sets is nonempty, closed and invariant. -/
+theorem inter_nested_closed_inv_is_closed_inv_nonempty
+    (f : α → α) (C : Set (Set α)) (hc :  IsChain (· ⊆ ·) C) (hn : ∀ V ∈ C, ClosedInvariantNonempty f V) :
+    ClosedInvariantNonempty f (⋂₀ C) := by
+  sorry
+
+/-- Every invariant nonempty closed subset contains at least a minimal invariant subset. -/
+theorem exists_minimal_set
+    (U : Set α) (h : ClosedInvariantNonempty f U) :
+    ∃ V : Set α, V ⊆ U ∧ (Minimal f V) := by
+  /- Consider `S` the set of invariant nonempty closed subsets. -/
+  let S : Set (Set α) := {V | V ⊆ U ∧ ClosedInvariantNonempty f V}
+  /- Every totally ordered subset of `S` has a lower bound. -/
+  have h0 : ∀ C ⊆ S, IsChain (· ⊆ ·) C → Set.Nonempty C → ∃ lb ∈ S, ∀ U' ∈ C, lb ⊆ U' := by
+    intros C h1 h2 h3
+    /- The intersection is the candidate for the lower bound. -/
+    let lb := ⋂₀ C
+    use lb
+    /- We show that `lb` has is closed, invariant and nonempty. -/
+    have h4 : ∀ V ∈ C, ClosedInvariantNonempty f V := by
+      intro V h5
+      exact (h1 h5).right
+    have h5 := inter_nested_closed_inv_is_closed_inv_nonempty f C h2 h4
+    /- We show that `lb` is in `S`. -/
+    choose V' h8 using h3 -- Let's fix some `V ∈ C`.
+    have h14 : V' ∈ S := by exact h1 h8
+    have h6 : lb ⊆ U := by exact Subset.trans (sInter_subset_of_mem h8) (h14.left)
+    /- We show that `lb` is a lowerbound. -/
+    have h12 : ∀ U' ∈ C, lb ⊆ U' := fun U' hu => sInter_subset_of_mem hu
+    exact ⟨mem_sep h6 h5, h12⟩
+  /- Apply Zorn's lemma. -/
+  obtain ⟨V, h1, h2⟩ := zorn_superset_nonempty S h0 U ⟨Eq.subset rfl,h⟩
+  use V
+  /- Rephrase the conclusion. -/
+  have h3 : ∀ (V' : Set α), V' ⊆ V ∧ ClosedInvariantNonempty f V' → V' = V := by
+    intros V' h4
+    exact h2.right V' ⟨(subset_trans h4.left h1.left), h4.right⟩ h4.left
+  exact ⟨h1.left, h1.right, h3⟩
+
+
+
+
 end Topological_Dynamics
