@@ -12,7 +12,11 @@ This file defines Birkhoff sums, other related notions and proves Birkhoff's erg
 We could do everything in a topological space, using filters and neighborhoods, but it will
 be more comfortable with a metric space.
 
-TODO: at some point translate to topological spaces
+# TODO
+
+- Match up the two different versions of `IsMinimal`.
+- Improve the naming of theorems and definitions.
+- Translate to topological spaces.
 
 ## References
 
