@@ -527,6 +527,26 @@ structure IsMinimalAlt (f : α → α) (U : Set α) : Prop :=
   (closedInvariant : IsCIN f U)
   (minimal : ∀ (V : Set α), V ⊆ U ∧ IsCIN f V → V = U)
 
+universe v
+/-- Cantor's intersection theorem:
+the intersection of a directed family of nonempty compact closed sets is nonempty.
+Alt version: version in mathlib requires `∀ i, IsCompact (Z i)` but `∃ i` is sufficient. -/
+theorem IsCompact.nonempty_iInter_of_directed_nonempty_compact_closed_alt
+    {ι : Type v} [hι : Nonempty ι]
+    (Z : ι → Set α) (hZd : Directed (· ⊇ ·) Z) (hZn : ∀ i, (Z i).Nonempty)
+    (hZc : ∃ i, IsCompact (Z i)) (hZcl : ∀ i, IsClosed (Z i)) : (⋂ i, Z i).Nonempty := by
+  choose i₀ hZc' using hZc
+  suffices (Z i₀ ∩ ⋂ i, Z i).Nonempty by
+    rwa [inter_eq_right.mpr (iInter_subset _ i₀)] at this
+  simp only [nonempty_iff_ne_empty] at hZn ⊢
+  apply mt (hZc'.elim_directed_family_closed Z hZcl)
+  push_neg
+  simp only [← nonempty_iff_ne_empty] at hZn ⊢
+  refine' ⟨hZd, fun i => _⟩
+  rcases hZd i₀ i with ⟨j, hji₀, hji⟩
+  exact (hZn j).mono (subset_inter hji₀ hji)
+
+
  /- The intersection of nested nonempty closed invariant sets is nonempty, closed and invariant. -/
 theorem inter_nested_closed_inv_is_closed_inv_nonempty
     (f : α → α) (C : Set (Set α))
