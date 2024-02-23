@@ -12,7 +12,11 @@ This file defines Birkhoff sums, other related notions and proves Birkhoff's erg
 We could do everything in a topological space, using filters and neighborhoods, but it will
 be more comfortable with a metric space.
 
-TODO: at some point translate to topological spaces
+# TODO
+
+- Match up the two different versions of `IsMinimal`.
+- Improve the naming of theorems and definitions.
+- Translate to topological spaces.
 
 ## References
 
@@ -506,5 +510,93 @@ theorem nonempty_invariant_closed_subset_has_minimalSubset
 /-- The recurrent set of `f` is nonempty -/
 theorem recurrentSet_nonempty [Nonempty α]: Set.Nonempty (recurrentSet f) := by
   sorry
+
+/-
+Here follows an alternative definition of minimal and corresponding proofs.
+TODO: Prove the equivalence of the two definitions.
+-/
+
+/-- Is a closed, invariant and nonempty set. -/
+structure IsCIN (f : α → α) (U : Set α) : Prop :=
+  (nonempty : U.Nonempty)
+  (closed : IsClosed U)
+  (invariant : IsInvariant (fun n x ↦ f^[n] x) U)
+
+/-- A set is minimal if it is closed, invariant and nonempty and no proper subset satisfies these same properties. -/
+structure IsMinimalAlt (f : α → α) (U : Set α) : Prop :=
+  (closedInvariant : IsCIN f U)
+  (minimal : ∀ (V : Set α), V ⊆ U ∧ IsCIN f V → V = U)
+
+
+/-- Cantor's intersection theorem - sInter version
+With Sebastien Gouezel's help. PR request for mathlib.
+-/
+theorem IsCompact.nonempty_sInter_of_directed_nonempty_isCompact_isClosed
+    (S : Set (Set α)) (hS : Set.Nonempty S)
+    (hSd : DirectedOn (· ⊇ ·) S) (hSn : ∀ U ∈ S, Set.Nonempty U)
+    (hSc : ∀ U ∈ S, IsCompact U) (hScl : ∀ U ∈ S, IsClosed U) : (⋂₀ S).Nonempty := by
+  rw [Set.sInter_eq_iInter]
+  have : Nonempty S := Set.nonempty_coe_sort.mpr hS
+  exact IsCompact.nonempty_iInter_of_directed_nonempty_compact_closed _
+    (DirectedOn.directed_val hSd) (fun i ↦ hSn i i.2) (fun i ↦ hSc i i.2) (fun i ↦ hScl i i.2)
+
+
+ /- The intersection of nested nonempty closed invariant sets is nonempty, closed and invariant. -/
+theorem inter_nested_closed_inv_is_closed_inv_nonempty
+    (f : α → α) (C : Set (Set α))
+    (hc1 : Set.Nonempty C) (hc2 :  IsChain (· ⊆ ·) C) (hn : ∀ V ∈ C, IsCIN f V) :
+    IsCIN f (⋂₀ C) := by
+  have hScl := (fun V x ↦ (hn V x).closed)
+  have hne := (fun V x ↦ (hn V x).nonempty)
+  -- Nonempty intersection follows from Cantor's intersection theorem
+  have h0 : (⋂₀ C).Nonempty := by
+    replace hc2 : IsChain (· ⊇ ·) C := hc2.symm -- Flip the chain.
+    have htd : DirectedOn (· ⊇ ·) C := IsChain.directedOn hc2
+    have hSc : ∀ U ∈ C, IsCompact U := fun U a ↦ IsClosed.isCompact (hScl U a)
+    refine IsCompact.nonempty_sInter_of_directed_nonempty_isCompact_isClosed C hc1 htd hne hSc hScl
+  have h1 : IsClosed (⋂₀ C) := isClosed_sInter (fun V x ↦ (hn V x).closed)
+  have h2 : IsInvariant (fun n x ↦ f^[n] x) (⋂₀ C) := by
+    intros n x hx
+    have h2b : ∀ U ∈ C, (fun n x ↦ f^[n] x) n x ∈ U := by
+      intros U h2c
+      exact (hn U h2c).invariant n (hx U h2c)
+    exact h2b
+  exact ⟨h0, h1, h2⟩
+
+/-- Every invariant nonempty closed subset contains at least a minimal invariant subset. -/
+theorem exists_minimal_set
+    (U : Set α) (h : IsCIN f U) :
+    ∃ V : Set α, V ⊆ U ∧ (IsMinimalAlt f V) := by
+  /- Consider `S` the set of invariant nonempty closed subsets. -/
+  let S : Set (Set α) := {V | V ⊆ U ∧ IsCIN f V}
+  /- Every totally ordered subset of `S` has a lower bound. -/
+  have h0 : ∀ C ⊆ S, IsChain (· ⊆ ·) C → Set.Nonempty C → ∃ lb ∈ S, ∀ U' ∈ C, lb ⊆ U' := by
+    intros C h1 h2 h3
+    /- The intersection is the candidate for the lower bound. -/
+    let lb := ⋂₀ C
+    use lb
+    /- We show that `lb` has is closed, invariant and nonempty. -/
+    have h4 : ∀ V ∈ C, IsCIN f V := by
+      intro V h5
+      exact (h1 h5).right
+    have h5 := inter_nested_closed_inv_is_closed_inv_nonempty f C h3 h2 h4
+    /- We show that `lb` is in `S`. -/
+    choose V' h8 using h3 -- Let's fix some `V ∈ C`.
+    have h14 : V' ∈ S := by exact h1 h8
+    have h6 : lb ⊆ U := by exact Subset.trans (sInter_subset_of_mem h8) (h14.left)
+    /- We show that `lb` is a lowerbound. -/
+    have h12 : ∀ U' ∈ C, lb ⊆ U' := fun U' hu => sInter_subset_of_mem hu
+    exact ⟨mem_sep h6 h5, h12⟩
+  /- Apply Zorn's lemma. -/
+  obtain ⟨V, h1, h2⟩ := zorn_superset_nonempty S h0 U ⟨Eq.subset rfl,h⟩
+  use V
+  /- Rephrase the conclusion. -/
+  have h3 : ∀ (V' : Set α), V' ⊆ V ∧ IsCIN f V' → V' = V := by
+    intros V' h4
+    exact h2.right V' ⟨(subset_trans h4.left h1.left), h4.right⟩ h4.left
+  exact ⟨h1.left, h1.right, h3⟩
+
+
+
 
 end Topological_Dynamics
