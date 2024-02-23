@@ -498,18 +498,6 @@ theorem minimalSubset_mem_recurrentSet (U : Set α) (hU: IsMinimalSubset f U) :
     exact hball
   done
 
-/-- Every invariant nonempty closed subset contains at least a minimal invariant subset. -/
-theorem nonempty_invariant_closed_subset_has_minimalSubset
-    (U : Set α) (hne: Nonempty U) (hC: IsClosed U) (hI: IsInvariant (fun n x => f^[n] x) U) :
-    ∃ V : Set α, V ⊆ U -> (hinv: MapsTo f U U) -> IsMinimalSubset f U := by
-  -- This follows from Zorn's lemma
-  sorry
-
-
-
-/-- The recurrent set of `f` is nonempty -/
-theorem recurrentSet_nonempty [Nonempty α]: Set.Nonempty (recurrentSet f) := by
-  sorry
 
 /-
 Here follows an alternative definition of minimal and corresponding proofs.
@@ -524,7 +512,7 @@ structure IsCIN (f : α → α) (U : Set α) : Prop :=
 
 /-- A set is minimal if it is closed, invariant and nonempty and no proper subset satisfies these same properties. -/
 structure IsMinimalAlt (f : α → α) (U : Set α) : Prop :=
-  (closedInvariant : IsCIN f U)
+  (cin : IsCIN f U)
   (minimal : ∀ (V : Set α), V ⊆ U ∧ IsCIN f V → V = U)
 
 
@@ -597,6 +585,26 @@ theorem exists_minimal_set
   exact ⟨h1.left, h1.right, h3⟩
 
 
+/-- The two definitions are equivalent. -/
+theorem minimal_equiv
+    (U : Set α) : (IsMinimalAlt f U) ↔ (IsMinimalSubset f U) := sorry
+
+
+/-- The recurrent set of `f` is nonempty -/
+theorem recurrentSet_nonempty [Nonempty α]: Set.Nonempty (recurrentSet f) := by
+  -- There exists a minimal set, this is a nonempty set.
+  have h0 := exists_minimal_set f univ
+  have h1 : IsCIN f univ := by
+    refine { nonempty := ?nonempty, closed := ?closed, invariant := fun _ ⦃x⦄ a ↦ a }
+    exact univ_nonempty
+    exact isClosed_univ
+  have h2 := h0 h1
+  choose V _ h4 using h2
+  have h5 := h4.cin.nonempty
+  -- The minimal set is contained within the recurrent set.
+  rw [minimal_equiv] at h4
+  have h6 : V ⊆ recurrentSet f := minimalSubset_mem_recurrentSet f V h4
+  exact Nonempty.mono h6 h5
 
 
 end Topological_Dynamics
