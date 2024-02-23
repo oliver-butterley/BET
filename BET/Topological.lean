@@ -527,35 +527,34 @@ structure IsMinimalAlt (f : α → α) (U : Set α) : Prop :=
   (closedInvariant : IsCIN f U)
   (minimal : ∀ (V : Set α), V ⊆ U ∧ IsCIN f V → V = U)
 
-universe v
-/-- Cantor's intersection theorem:
-the intersection of a directed family of nonempty compact closed sets is nonempty.
-Alt version: version in mathlib requires `∀ i, IsCompact (Z i)` but `∃ i` is sufficient. -/
-theorem IsCompact.nonempty_iInter_of_directed_nonempty_compact_closed_alt
-    {ι : Type v} [hι : Nonempty ι]
-    (Z : ι → Set α) (hZd : Directed (· ⊇ ·) Z) (hZn : ∀ i, (Z i).Nonempty)
-    (hZc : ∃ i, IsCompact (Z i)) (hZcl : ∀ i, IsClosed (Z i)) : (⋂ i, Z i).Nonempty := by
-  choose i₀ hZc' using hZc
-  suffices (Z i₀ ∩ ⋂ i, Z i).Nonempty by
-    rwa [inter_eq_right.mpr (iInter_subset _ i₀)] at this
-  simp only [nonempty_iff_ne_empty] at hZn ⊢
-  apply mt (hZc'.elim_directed_family_closed Z hZcl)
-  push_neg
-  simp only [← nonempty_iff_ne_empty] at hZn ⊢
-  refine' ⟨hZd, fun i => _⟩
-  rcases hZd i₀ i with ⟨j, hji₀, hji⟩
-  exact (hZn j).mono (subset_inter hji₀ hji)
+
+/-- Cantor's intersection theorem - sInter version
+With Sebastien Gouezel's help. PR request for mathlib.
+-/
+theorem IsCompact.nonempty_sInter_of_directed_nonempty_isCompact_isClosed
+    (S : Set (Set α)) (hS : Set.Nonempty S)
+    (hSd : DirectedOn (· ⊇ ·) S) (hSn : ∀ U ∈ S, Set.Nonempty U)
+    (hSc : ∀ U ∈ S, IsCompact U) (hScl : ∀ U ∈ S, IsClosed U) : (⋂₀ S).Nonempty := by
+  rw [Set.sInter_eq_iInter]
+  have : Nonempty S := Set.nonempty_coe_sort.mpr hS
+  exact IsCompact.nonempty_iInter_of_directed_nonempty_compact_closed _
+    (DirectedOn.directed_val hSd) (fun i ↦ hSn i i.2) (fun i ↦ hSc i i.2) (fun i ↦ hScl i i.2)
 
 
  /- The intersection of nested nonempty closed invariant sets is nonempty, closed and invariant. -/
 theorem inter_nested_closed_inv_is_closed_inv_nonempty
     (f : α → α) (C : Set (Set α))
-    (hc :  IsChain (· ⊆ ·) C) (hn : ∀ V ∈ C, IsCIN f V) :
+    (hc1 : Set.Nonempty C) (hc2 :  IsChain (· ⊆ ·) C) (hn : ∀ V ∈ C, IsCIN f V) :
     IsCIN f (⋂₀ C) := by
-  have h0 : (⋂₀ C).Nonempty :=
-
-    sorry
-  have h1 : IsClosed (⋂₀ C) := isClosed_sInter (fun V a ↦ (hn V a).closed)
+  have hScl := (fun V x ↦ (hn V x).closed)
+  have hne := (fun V x ↦ (hn V x).nonempty)
+  -- Nonempty intersection follows from Cantor's intersection theorem
+  have h0 : (⋂₀ C).Nonempty := by
+    replace hc2 : IsChain (· ⊇ ·) C := hc2.symm -- Flip the chain.
+    have htd : DirectedOn (· ⊇ ·) C := IsChain.directedOn hc2
+    have hSc : ∀ U ∈ C, IsCompact U := fun U a ↦ IsClosed.isCompact (hScl U a)
+    refine IsCompact.nonempty_sInter_of_directed_nonempty_isCompact_isClosed C hc1 htd hne hSc hScl
+  have h1 : IsClosed (⋂₀ C) := isClosed_sInter (fun V x ↦ (hn V x).closed)
   have h2 : IsInvariant (fun n x ↦ f^[n] x) (⋂₀ C) := by
     intros n x hx
     have h2b : ∀ U ∈ C, (fun n x ↦ f^[n] x) n x ∈ U := by
@@ -580,7 +579,7 @@ theorem exists_minimal_set
     have h4 : ∀ V ∈ C, IsCIN f V := by
       intro V h5
       exact (h1 h5).right
-    have h5 := inter_nested_closed_inv_is_closed_inv_nonempty f C h2 h4
+    have h5 := inter_nested_closed_inv_is_closed_inv_nonempty f C h3 h2 h4
     /- We show that `lb` is in `S`. -/
     choose V' h8 using h3 -- Let's fix some `V ∈ C`.
     have h14 : V' ∈ S := by exact h1 h8
