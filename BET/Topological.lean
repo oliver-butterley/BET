@@ -5,7 +5,11 @@ import Mathlib.Dynamics.Ergodic.AddCircle
 /-!
 # Topological dynamics
 
-This file defines Birkhoff sums, other related notions and proves Birkhoff's ergodic theorem.
+This file defines:
+
+- Non wandering set
+- Minimal sets
+- Recurrence sets
 
 ## Implementation notes
 
