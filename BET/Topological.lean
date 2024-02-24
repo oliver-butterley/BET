@@ -19,6 +19,7 @@ be more comfortable with a metric space.
 # TODO
 
 - Match up the two different versions of `IsMinimal`.
+- Add definition of orbit
 - Improve the naming of theorems and definitions.
 - Translate to topological spaces.
 
@@ -589,9 +590,40 @@ theorem exists_minimal_set
   exact ⟨h1.left, h1.right, h3⟩
 
 
+/-- The orbit of a point `x` is set of all iterates under `f`. -/
+def orbit x := iInter (fun (n : ℕ) ↦ {f^[n] x})
+
+
+theorem closure_orbit_inv : True := sorry
+-- closure of any orbit is invariant
+
+
 /-- The two definitions are equivalent. -/
 theorem minimal_equiv
     (U : Set α) : (IsMinimalAlt f U) ↔ (IsMinimalSubset f U) := sorry
+
+    /-
+    # Minimal → MinimalAlt
+
+    `U` is a minimal subset and so `U` is nonempty and closed by definition.
+    Let `V` be a nonempty closed invariant subset of `U`.
+    Since `V` is nonempty, there exists `x ∈ V`.
+    Because the orbit of each point in `U` is dense in `U` and `V` is a closed invariant subset `U = closure orbit x ⊆ V ⊆ U`.
+    Thus, `U = V`.
+    Therefore, `U` has no proper nonempty closed invariant subsets.
+    Furthermore, `U` is invariant since `V` is invariant.
+    -/
+
+    /-
+    # MinimalAlt → Minimal
+
+    Let `U` be a nonempty closed invariant subset of X such that `U` has no proper nonempty closed invariant subsets.
+    If `x ∈ U`, then the invariance of `U` guarantees that the orbit of `x` is contained within `U`.
+    `closure_orbit_inv` implies that the closure of the orbit is invariant.
+    Thus, this set is a nonempty closed invariant subset of `U`.
+    Since `U` has no proper nonempty closed invariant subsets, `U` is equal to the closure of the orbit.
+    Hence, the oribit of any point is dense in `U`.
+    -/
 
 
 /-- The recurrent set of `f` is nonempty -/
