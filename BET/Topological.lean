@@ -411,7 +411,8 @@ theorem recurrentSet_nonwandering : recurrentSet f ⊆ (nonWanderingSet f) := by
   exact hz
   done
 
-/-- The minimal subsets are the closed invariant subsets in which all orbits are dense. -/
+/- A subset is minimal if it is nonempty, closed, and every orbit is dense.
+To do: remove invariant, add nonempty. -/
 structure IsMinimalSubset (f : α → α) (U : Set α) : Prop :=
   (closed : IsClosed U)
   (invariant: IsInvariant (fun n x => f^[n] x) U)
@@ -596,18 +597,60 @@ theorem closure_orbit_inv (x : α) : IsInvariant (fun n x ↦ f^[n] x) (closure 
   exact h3 (ContinuousOn.image_closure h1 h2)
 
 
-/-- The two definitions are equivalent. -/
-theorem minimal_equiv
-    (U : Set α) : (IsMinimalAlt f U) ↔ (IsMinimalSubset f U) := sorry
+
+def everyOrbitDense (U : Set α) := ∀ (x y : α) (_: x ∈ U) (_: y ∈ U) (ε : ℝ),
+    ε > 0 -> ∃ n : ℕ, f^[n] y ∈ ball x ε
+
+theorem invariant_if_everyOrbitDense
+    (U : Set α) (hd : everyOrbitDense f U) (hcl : IsClosed U) :
+    IsInvariant (fun n x ↦ f^[n] x) U := by
+  sorry
+
+theorem minimalAlt_if_minimal
+    (U : Set α) (hd : everyOrbitDense f U) (hcl : IsClosed U)
+    (hn : U.Nonempty) : IsMinimalAlt f U := by
+  -- `U` is a minimal subset and so `U` is nonempty and closed by definition.
+  refine { cin.closed := hcl, cin.invariant := ?_, cin.nonempty := hn, minimal := ?_ }
+  -- Invariance follows from prior result.
+  exact invariant_if_everyOrbitDense f U hd hcl
+  -- Suppose that `V` is a nonempty closed invariant subset of `U` and show that `V = U`.
+  intro V h8
+  -- Since `V` is nonempty, there exists `x ∈ V`.
+  let x := h8.right.nonempty.some
+  have h3 : x ∈ V := Nonempty.some_mem h8.right.nonempty
+  -- The orbit of each point in `U` is dense in `U` and `V` is a closed invariant subset.
+  -- Consequently `U = closure orbit x ⊆ V`.
+  have h4 : U = closure (orbit f x) := by
+    have h15 := hd
+    unfold everyOrbitDense at h15
+    have h16 : U ⊆ closure (orbit f x) := by
+      intros y h18
+
+      sorry
+    have h17 : closure (orbit f x) ⊆ U := by
+      intros y h19
+
+      sorry
+    exact Set.eq_of_subset_of_subset h16 h17
+  have h5 : closure (orbit f x) ⊆ V := by
+    have h9 := h8.right.closed
+    have h12 := h8.right.invariant
+    have h10 : (orbit f x) ⊆ V := by
+      intros y h13
+      choose n h14 using h13
+      have h11 : f^[n] x ∈ V := h12 n h3
+      rw [← h14] at h11
+      exact h11
+    exact closure_minimal h10 h9
+  rw [← h4] at h5
+  -- Thus, `U = V`.
+  have h6 := Set.eq_of_subset_of_subset h5 h8.left
+
 
     /-
     # Minimal → MinimalAlt
 
-    `U` is a minimal subset and so `U` is nonempty and closed by definition.
-    Let `V` be a nonempty closed invariant subset of `U`.
-    Since `V` is nonempty, there exists `x ∈ V`.
-    Because the orbit of each point in `U` is dense in `U` and `V` is a closed invariant subset `U = closure orbit x ⊆ V ⊆ U`.
-    Thus, `U = V`.
+
     Therefore, `U` has no proper nonempty closed invariant subsets.
     Furthermore, `U` is invariant since `V` is invariant.
     -/
@@ -622,6 +665,11 @@ theorem minimal_equiv
     Since `U` has no proper nonempty closed invariant subsets, `U` is equal to the closure of the orbit.
     Hence, the oribit of any point is dense in `U`.
     -/
+
+/-- The two definitions are equivalent. -/
+theorem minimal_equiv
+    (U : Set α) : (IsMinimalAlt f U) ↔ (IsMinimalSubset f U) := sorry
+
 
 
 /-- The recurrent set of `f` is nonempty -/
