@@ -594,13 +594,17 @@ theorem exists_minimal_set
 
 
 /-- The orbit of a point `x` is set of all iterates under `f`. -/
-def orbit x := iUnion (fun (n : ℕ) ↦ {f^[n] x})
+def orbit x := { y | ∃ n : ℕ, y = f^[n] x }
 
 
 /-- The orbit of a point is invariant. -/
 theorem orbit_inv (x : α) : IsInvariant (fun n x ↦ f^[n] x) (orbit f x) := by
-  sorry
-
+  intros n y h0
+  choose m h1 using h0
+  have h5 : f^[n] y = f^[n + m] x := by
+    rw [h1]
+    exact (iterate_add_apply f n m x).symm
+  use n + m
 
 /-- The closure of an orbit is invariant under the dynamics. -/
 theorem closure_orbit_inv (x : α) : IsInvariant (fun n x ↦ f^[n] x) (closure (orbit f x)) := by
