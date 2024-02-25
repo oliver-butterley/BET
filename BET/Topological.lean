@@ -13,14 +13,14 @@ This file defines:
 
 ## Implementation notes
 
-We could do everything in a topological space, using filters and neighborhoods, but it will
-be more comfortable with a metric space.
+We could do everything in a topological space, using filters and neighborhoods, but it will be more comfortable with a metric space.
 
 # TODO
 
 - Match up the two different versions of `IsMinimal`.
-- Add definition of orbit
 - Improve the naming of theorems and definitions.
+- Extend the description of the file contents (definitions / theorems).
+- Only use compactSpace when really required.
 - Translate to topological spaces.
 
 ## References
@@ -543,11 +543,14 @@ theorem inter_nested_closed_inv_is_closed_inv_nonempty
   have hne := (fun V x ↦ (hn V x).nonempty)
   -- Nonempty intersection follows from Cantor's intersection theorem
   have h0 : (⋂₀ C).Nonempty := by
-    replace hc2 : IsChain (· ⊇ ·) C := hc2.symm -- Flip the chain.
+    -- Flip the chain to fit with the result in mathlib
+    replace hc2 : IsChain (· ⊇ ·) C := hc2.symm
     have htd : DirectedOn (· ⊇ ·) C := IsChain.directedOn hc2
     have hSc : ∀ U ∈ C, IsCompact U := fun U a ↦ IsClosed.isCompact (hScl U a)
     refine IsCompact.nonempty_sInter_of_directed_nonempty_isCompact_isClosed C hc1 htd hne hSc hScl
-  have h1 : IsClosed (⋂₀ C) := isClosed_sInter (fun V x ↦ (hn V x).closed)
+  -- Closed direct from assumptions
+  have h1 : IsClosed (⋂₀ C) := isClosed_sInter hScl
+  -- Invariance from basic argument
   have h2 : IsInvariant (fun n x ↦ f^[n] x) (⋂₀ C) := by
     intros n x hx
     have h2b : ∀ U ∈ C, (fun n x ↦ f^[n] x) n x ∈ U := by
@@ -594,8 +597,19 @@ theorem exists_minimal_set
 def orbit x := iUnion (fun (n : ℕ) ↦ {f^[n] x})
 
 
-theorem closure_orbit_inv : True := sorry
--- closure of any orbit is invariant
+/-- The orbit of a point is invariant. -/
+theorem orbit_inv (x : α) : IsInvariant (fun n x ↦ f^[n] x) (orbit f x) := by
+  sorry
+
+
+/-- The closure of an orbit is invariant under the dynamics. -/
+theorem closure_orbit_inv (x : α) : IsInvariant (fun n x ↦ f^[n] x) (closure (orbit f x)) := by
+  let s := orbit f x
+  intros n y h0
+  have h1 : ContinuousOn f^[n] (closure s) := Continuous.continuousOn (Continuous.iterate hf n)
+  have h2 : f^[n] y ∈ f^[n] '' closure s := Exists.intro y { left := h0, right := rfl }
+  have h3 := closure_mono (mapsTo'.mp ((orbit_inv f x) n))
+  exact h3 (ContinuousOn.image_closure h1 h2)
 
 
 /-- The two definitions are equivalent. -/
