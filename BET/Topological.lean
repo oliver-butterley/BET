@@ -502,12 +502,6 @@ theorem minimalSubset_mem_recurrentSet (U : Set α) (hU: IsMinimalSubset f U) :
     exact hball
   done
 
-
-/-
-Here follows an alternative definition of minimal and corresponding proofs.
-TODO: Prove the equivalence of the two definitions.
--/
-
 /-- Is a closed, invariant and nonempty set. -/
 structure IsCIN (f : α → α) (U : Set α) : Prop :=
   (nonempty : U.Nonempty)
@@ -518,19 +512,6 @@ structure IsCIN (f : α → α) (U : Set α) : Prop :=
 structure IsMinimalAlt (f : α → α) (U : Set α) : Prop :=
   (cin : IsCIN f U)
   (minimal : ∀ (V : Set α), V ⊆ U ∧ IsCIN f V → V = U)
-
-
-/-- Cantor's intersection theorem - sInter version
-With Sebastien Gouezel's help. PR request for mathlib.
--/
-theorem IsCompact.nonempty_sInter_of_directed_nonempty_isCompact_isClosed
-    {S : Set (Set α)} [hS : Nonempty S]
-    (hSd : DirectedOn (· ⊇ ·) S) (hSn : ∀ U ∈ S, U.Nonempty)
-    (hSc : ∀ U ∈ S, IsCompact U) (hScl : ∀ U ∈ S, IsClosed U) : (⋂₀ S).Nonempty := by
-  rw [Set.sInter_eq_iInter]
-  exact IsCompact.nonempty_iInter_of_directed_nonempty_compact_closed _
-    (DirectedOn.directed_val hSd) (fun i ↦ hSn i i.2) (fun i ↦ hSc i i.2) (fun i ↦ hScl i i.2)
-
 
  /- The intersection of nested nonempty closed invariant sets is nonempty, closed and invariant. -/
 theorem inter_nested_closed_inv_is_closed_inv_nonempty
@@ -546,7 +527,7 @@ theorem inter_nested_closed_inv_is_closed_inv_nonempty
     have htd : DirectedOn (· ⊇ ·) C := IsChain.directedOn hc2
     have hSc : ∀ U ∈ C, IsCompact U := fun U a ↦ IsClosed.isCompact (hScl U a)
     have : Nonempty C := nonempty_coe_sort.mpr hc1
-    refine IsCompact.nonempty_sInter_of_directed_nonempty_isCompact_isClosed htd hne hSc hScl
+    refine IsCompact.nonempty_sInter_of_directed_nonempty_compact_closed htd hne hSc hScl
   -- Closed direct from assumptions
   have h1 : IsClosed (⋂₀ C) := isClosed_sInter hScl
   -- Invariance from basic argument
