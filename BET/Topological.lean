@@ -31,7 +31,6 @@ We could do everything in a topological space, using filters and neighborhoods, 
 
 open MeasureTheory Filter Metric Function Set
 open scoped omegaLimit
-set_option autoImplicit false
 
 section Topological_Dynamics
 
@@ -525,11 +524,10 @@ structure IsMinimalAlt (f : α → α) (U : Set α) : Prop :=
 With Sebastien Gouezel's help. PR request for mathlib.
 -/
 theorem IsCompact.nonempty_sInter_of_directed_nonempty_isCompact_isClosed
-    (S : Set (Set α)) (hS : Set.Nonempty S)
-    (hSd : DirectedOn (· ⊇ ·) S) (hSn : ∀ U ∈ S, Set.Nonempty U)
+    {S : Set (Set α)} [hS : Nonempty S]
+    (hSd : DirectedOn (· ⊇ ·) S) (hSn : ∀ U ∈ S, U.Nonempty)
     (hSc : ∀ U ∈ S, IsCompact U) (hScl : ∀ U ∈ S, IsClosed U) : (⋂₀ S).Nonempty := by
   rw [Set.sInter_eq_iInter]
-  have : Nonempty S := Set.nonempty_coe_sort.mpr hS
   exact IsCompact.nonempty_iInter_of_directed_nonempty_compact_closed _
     (DirectedOn.directed_val hSd) (fun i ↦ hSn i i.2) (fun i ↦ hSc i i.2) (fun i ↦ hScl i i.2)
 
@@ -537,7 +535,7 @@ theorem IsCompact.nonempty_sInter_of_directed_nonempty_isCompact_isClosed
  /- The intersection of nested nonempty closed invariant sets is nonempty, closed and invariant. -/
 theorem inter_nested_closed_inv_is_closed_inv_nonempty
     (f : α → α) (C : Set (Set α))
-    (hc1 : Set.Nonempty C) (hc2 :  IsChain (· ⊆ ·) C) (hn : ∀ V ∈ C, IsCIN f V) :
+    (hc1 : C.Nonempty) (hc2 :  IsChain (· ⊆ ·) C) (hn : ∀ V ∈ C, IsCIN f V) :
     IsCIN f (⋂₀ C) := by
   have hScl := (fun V x ↦ (hn V x).closed)
   have hne := (fun V x ↦ (hn V x).nonempty)
@@ -547,7 +545,8 @@ theorem inter_nested_closed_inv_is_closed_inv_nonempty
     replace hc2 : IsChain (· ⊇ ·) C := hc2.symm
     have htd : DirectedOn (· ⊇ ·) C := IsChain.directedOn hc2
     have hSc : ∀ U ∈ C, IsCompact U := fun U a ↦ IsClosed.isCompact (hScl U a)
-    refine IsCompact.nonempty_sInter_of_directed_nonempty_isCompact_isClosed C hc1 htd hne hSc hScl
+    have : Nonempty C := nonempty_coe_sort.mpr hc1
+    refine IsCompact.nonempty_sInter_of_directed_nonempty_isCompact_isClosed htd hne hSc hScl
   -- Closed direct from assumptions
   have h1 : IsClosed (⋂₀ C) := isClosed_sInter hScl
   -- Invariance from basic argument
