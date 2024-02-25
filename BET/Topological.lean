@@ -591,7 +591,7 @@ theorem exists_minimal_set
 
 
 /-- The orbit of a point `x` is set of all iterates under `f`. -/
-def orbit x := iInter (fun (n : ℕ) ↦ {f^[n] x})
+def orbit x := iUnion (fun (n : ℕ) ↦ {f^[n] x})
 
 
 theorem closure_orbit_inv : True := sorry
