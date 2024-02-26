@@ -2,7 +2,7 @@ name: Check for updates
 
 on:
   schedule:
-    - cron: "0 10 * * 6" # every saturday at 10:00
+    - cron: "0 10 * * 3" # every Tuesday at 10:00
   workflow_dispatch: # allows manual starts
 
 jobs:
@@ -62,7 +62,7 @@ jobs:
         run: |
           if [[ $CLOSE_PREVIOUS == true ]]; then
             previous_issue_number=$(gh issue list \
-              --title "$TITLE" \
+              --label "$LABELS" \
               --json number \
               --jq '.[0].number')
             if [[ -n $previous_issue_number ]]; then
@@ -83,4 +83,4 @@ jobs:
 
             Files changed: ${{ steps.check-update.outputs.changed_files }}
 
-          CLOSE_PREVIOUS: true
+          CLOSE_PREVIOUS: false
