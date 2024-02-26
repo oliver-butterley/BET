@@ -60,4 +60,29 @@ jobs:
       - name: Open issue if the updated lean build fails
         if: steps.build-lean.outcome == 'failure'
         run: |
-          echo "Update available but failed to build updated version."
+          if [[ $CLOSE_PREVIOUS == true ]]; then
+            previous_issue_number=$(gh issue list \
+              --label "$LABELS" \
+              --json number \
+              --jq '.[0].number')
+            if [[ -n $previous_issue_number ]]; then
+              gh issue close "$previous_issue_number"
+            fi
+          fi
+          new_issue_url=$(gh issue create \
+            --title "$TITLE" \
+            --label "$LABELS" \
+            --body "$BODY")
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TITLE: Updates available but needs manual intervention
+          LABELS: bump-dependencies
+          BODY: |
+            Update info...
+
+            Files changed: ${{ steps.check-update.outputs.changed_files }}
+
+            Would be useful here...
+
+          CLOSE_PREVIOUS: true
