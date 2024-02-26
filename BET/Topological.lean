@@ -599,12 +599,17 @@ theorem closure_orbit_inv (x : α) : IsInvariant (fun n x ↦ f^[n] x) (closure 
 
 
 def everyOrbitDense (U : Set α) := ∀ (x y : α) (_: x ∈ U) (_: y ∈ U) (ε : ℝ),
-    ε > 0 -> ∃ n : ℕ, f^[n] y ∈ ball x ε
+    ε > 0 → ∃ n : ℕ, f^[n] y ∈ ball x ε
 
+/-- If the orbit of any point in a set `U` is dense then `U` is invariant. -/
 theorem invariant_if_everyOrbitDense
     (U : Set α) (hd : everyOrbitDense f U) (hcl : IsClosed U) :
     IsInvariant (fun n x ↦ f^[n] x) U := by
+
   sorry
+
+/- A nonempty set `U` is minimal if `U = cl(orbit f x)` for all `x ∈ U`. -/
+-- theorem
 
 theorem minimalAlt_if_minimal
     (U : Set α) (hd : everyOrbitDense f U) (hcl : IsClosed U)
@@ -669,7 +674,6 @@ theorem minimalAlt_if_minimal
 /-- The two definitions are equivalent. -/
 theorem minimal_equiv
     (U : Set α) : (IsMinimalAlt f U) ↔ (IsMinimalSubset f U) := sorry
-
 
 
 /-- The recurrent set of `f` is nonempty -/
