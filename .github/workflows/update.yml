@@ -62,7 +62,7 @@ jobs:
         run: |
           if [[ $CLOSE_PREVIOUS == true ]]; then
             previous_issue_number=$(gh issue list \
-              --label "$LABELS" \
+              --title "$TITLE" \
               --json number \
               --jq '.[0].number')
             if [[ -n $previous_issue_number ]]; then
@@ -76,13 +76,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          TITLE: Updates available but needs manual intervention
-          LABELS: bump-dependencies
+          TITLE: Updates available but manual intervention required
+          LABELS: bug
           BODY: |
             Update info...
 
             Files changed: ${{ steps.check-update.outputs.changed_files }}
-
-            Would be useful here...
 
           CLOSE_PREVIOUS: true
