@@ -1,0 +1,64 @@
+name: Check for Lean and mathlib updates
+
+on:
+  schedule:
+    - cron: '0 10 * * *'
+  workflow_dispatch:
+
+jobs:
+  attempt-update:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install elan
+      run: |
+        curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y
+        echo "$HOME/.elan/bin" >> $GITHUB_PATH
+        echo lake --version
+
+    - name: update
+      run: lake update
+
+    - name: Check if anything was updated
+      uses: tj-actions/verify-changed-files@v18
+      id: check-update
+      with:
+        files: |
+          lean-toolchain
+          lake-manifest.json
+
+    - name: Run step only if something was updated
+      if: steps.check-update.outputs.files_changed == 'true'
+      env:
+        CHANGED_FILES: ${{ steps.check-update.outputs.changed_files }}
+      run: |
+        echo "Changed files: $CHANGED_FILES"
+
+    - name: Run step only if nothing was updated
+      if: steps.check-update.outputs.files_changed == 'false'
+      run: |
+        echo "No files have changed"
+
+
+
+  # attempt-build:
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Get cache
+  #       run: lake exe cache get || true
+  #     - name: Build project
+  #       run: lake build
+
+  # open-pr:
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+
+  # open-issue:
+  #   runs-on: ubuntu-latest
+
+  #   steps:
