@@ -1,9 +1,9 @@
-name: Check for Lean and mathlib updates
+name: Check for Lean and dependency updates
 
 on:
   schedule:
-    - cron: '0 10 * * *'
-  workflow_dispatch:
+    - cron: '0 10 * * 6'  # every saturday at 10:00
+  workflow_dispatch:      # allows manual starts
 
 jobs:
   attempt-update:
@@ -17,7 +17,7 @@ jobs:
       run: |
         curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -sSf | sh -s -- -y
         echo "$HOME/.elan/bin" >> $GITHUB_PATH
-        echo lake --version
+        lake --version
 
     - name: update
       run: lake update
@@ -30,33 +30,32 @@ jobs:
           lean-toolchain
           lake-manifest.json
 
-    - name: Run step only if something was updated
+    - name: Try to build lean if something was updated
       if: steps.check-update.outputs.files_changed == 'true'
+      id: build-lean
+      continue-on-error: true
       env:
         CHANGED_FILES: ${{ steps.check-update.outputs.changed_files }}
       run: |
-        echo "Changed files: $CHANGED_FILES"
+        echo "Updates performed: $CHANGED_FILES"
+        lake exe cache get || true
+        lake build
 
     - name: Run step only if nothing was updated
       if: steps.check-update.outputs.files_changed == 'false'
       run: |
-        echo "No files have changed"
+        echo "No update available"
 
+    - name: Open PR if the updated lean build was successful
+      if: steps.build-lean.outcome.successful == 'true'
+      uses: peter-evans/create-pull-request@v6
+      with:
+        title: "Updates available and ready to merge."
+        body: "Would be useful to have some details here..."
+        delete-branch: true
+        branch-suffix: random
+        branch: auto-update/patch
 
-
-  # attempt-build:
-  #   runs-on: ubuntu-latest
-
-  #   steps:
-  #     - name: Get cache
-  #       run: lake exe cache get || true
-  #     - name: Build project
-  #       run: lake build
-
-  # open-pr:
-  #   runs-on: ubuntu-latest
-
-  #   steps:
 
   # open-issue:
   #   runs-on: ubuntu-latest
