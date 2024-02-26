@@ -35,10 +35,7 @@ jobs:
         if: steps.check-update.outputs.files_changed == 'true'
         id: build-lean
         continue-on-error: true
-        env:
-          CHANGED_FILES: ${{ steps.check-update.outputs.changed_files }}
         run: |
-          echo "Updates performed: $CHANGED_FILES"
           lake exe cache get || true
           lake build
 
@@ -62,25 +59,27 @@ jobs:
         run: |
           if [[ $CLOSE_PREVIOUS == true ]]; then
             previous_issue_number=$(gh issue list \
+              --author github-actions \
               --label "$LABELS" \
+              --search "$TITLE" in:title \
               --json number \
               --jq '.[0].number')
             if [[ -n $previous_issue_number ]]; then
               gh issue close "$previous_issue_number"
             fi
           fi
-          new_issue_url=$(gh issue create \
+          gh issue create \
             --title "$TITLE" \
             --label "$LABELS" \
-            --body "$BODY")
+            --body "$BODY"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           TITLE: Updates available but manual intervention required
           LABELS: bug
           BODY: |
-            Update info...
+            Run `lake update` and then investigate why this update causes the lean build to fail.
 
-            Files changed: ${{ steps.check-update.outputs.changed_files }}
+            Files changed in update: ${{ steps.check-update.outputs.changed_files }}
 
-          CLOSE_PREVIOUS: false
+          CLOSE_PREVIOUS: true
