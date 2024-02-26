@@ -1,4 +1,4 @@
-name: Check for Lean and dependency updates
+name: Check for updates
 
 on:
   schedule:
@@ -8,6 +8,8 @@ on:
 jobs:
   attempt-update:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
 
     steps:
       - name: Checkout code
