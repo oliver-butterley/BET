@@ -59,9 +59,7 @@ jobs:
         run: |
           if [[ $CLOSE_PREVIOUS == true ]]; then
             previous_issue_number=$(gh issue list \
-              --author github-actions \
-              --label "$LABELS" \
-              --search "$TITLE" in:title \
+              --search '"$TITLE" in:title author:app/github-actions' \
               --json number \
               --jq '.[0].number')
             if [[ -n $previous_issue_number ]]; then
