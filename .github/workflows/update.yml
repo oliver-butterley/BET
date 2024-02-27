@@ -1,8 +1,14 @@
 name: Check for updates
 
+# This action will run `lean update` and try `lean build` if there is an available update.
+# There are three possible outcomes:
+# - No update available (silent) (no-update)
+# - Update available and build succeeds (open PR) (update-success)
+# - Update available and build fails (open issue) (update-fail)
+
 on:
   schedule:
-    - cron: "0 10 * * 3" # every Tuesday at 10:00
+    - cron: "0 11 * * 3" # every Tuesday at 11:00
   workflow_dispatch: # allows manual starts
 
 jobs:
@@ -43,6 +49,13 @@ jobs:
         if: steps.check-update.outputs.files_changed == 'false'
         run: |
           echo "No update available"
+          echo "result=no-update" >> "$GITHUB_OUTPUT"
+
+      - name: Run step only if the updated lean build was successful
+        if: steps.build-lean.outcome == 'success'
+        run: |
+          echo "Update available and build successful"
+          echo "result=update-success" >> "$GITHUB_OUTPUT"
 
       - name: Open PR if the updated lean build was successful
         if: steps.build-lean.outcome == 'success'
@@ -56,14 +69,17 @@ jobs:
 
       - name: Open issue if the updated lean build fails
         if: steps.build-lean.outcome == 'failure'
-        run: |
+        run: |   # close previous issue
+          echo "result=update-fail" >> "$GITHUB_OUTPUT"
           if [[ $CLOSE_PREVIOUS == true ]]; then
             previous_issue_number=$(gh issue list \
               --search '"$TITLE" in:title author:app/github-actions' \
               --json number \
               --jq '.[0].number')
+            echo $previous_issue_number
             if [[ -n $previous_issue_number ]]; then
               gh issue close "$previous_issue_number"
+              echo Closing issue
             fi
           fi
           gh issue create \
@@ -79,5 +95,7 @@ jobs:
             Run `lake update` and then investigate why this update causes the lean build to fail.
 
             Files changed in update: ${{ steps.check-update.outputs.changed_files }}
+
+            To do: Update action so that it will not create another issue until this present issue is closed.
 
           CLOSE_PREVIOUS: true
