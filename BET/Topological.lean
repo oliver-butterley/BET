@@ -1,4 +1,3 @@
-import Mathlib.Tactic
 import Mathlib.Dynamics.OmegaLimit
 import Mathlib.Dynamics.Ergodic.AddCircle
 
@@ -65,7 +64,16 @@ lemma periodic_arbitrary_large_time (N : ℕ) (m : ℕ) (hm : 0 < m) (ε : ℝ) 
   · exact Nat.le_mul_of_pos_left N hm
   done
 
-lemma inter_subset_empty_of_inter_empty (A : Set α) (B: Set α) (C : Set α) (D: Set α) :
+
+theorem inter_subset_inter_empty (s t u v : Set α) (hs : s ⊆ u) (ht : t ⊆ v) (he : (u ∩ v) = ∅) :
+    (s ∩ t) = ∅ := by
+  have h1 : (s ∩ t) ⊆ (u ∩ v) := Set.inter_subset_inter hs ht
+  rw [he] at h1
+  exact eq_empty_of_subset_empty h1
+
+
+-- change to s t u v
+lemma inter_subset_empty_of_inter_empty (A B C D : Set α) :
 (A ⊆ C) → (B ⊆ D) → (C ∩ D = ∅) → (A ∩ B = ∅) := by
   intro hAC hBD hCD
   have hincl : A ∩ B ⊆ C ∩ D := inter_subset_inter hAC hBD
@@ -295,7 +303,8 @@ theorem is_cpt : IsCompact (nonWanderingSet f : Set α) := by
   . exact isBounded_of_compactSpace
   done
 
-/-- The omega-limit set of any point is nonempty. -/
+/-- The omega-limit set of any point is nonempty.
+Is this implied by `nonempty_omegaLimit` in `\OmegaLimit.lean`?-/
 theorem omegaLimit_nonempty (x : α) : Set.Nonempty (ω⁺ (fun n ↦ f^[n]) ({x})) := by
   apply nonempty_omegaLimit atTop (fun n ↦ f^[n]) {x}
   exact Set.singleton_nonempty x
@@ -410,6 +419,8 @@ theorem recurrentSet_nonwandering : recurrentSet f ⊆ (nonWanderingSet f) := by
   apply omegaLimit_nonwandering
   exact hz
   done
+
+-- Minimal stuff probably in `Mathlib/Dynamics/Minimal.lean` but missing the existence proof
 
 /- A subset is minimal if it is nonempty, closed, and every orbit is dense.
 To do: remove invariant, add nonempty. -/
@@ -650,7 +661,7 @@ theorem minimalAlt_if_minimal
   rw [← h4] at h5
   -- Thus, `U = V`.
   have h6 := Set.eq_of_subset_of_subset h5 h8.left
-
+  exact h6.symm
 
     /-
     # Minimal → MinimalAlt
