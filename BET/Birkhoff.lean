@@ -31,16 +31,36 @@ variable {μ : MeasureTheory.Measure α} [MeasureTheory.IsProbabilityMeasure μ]
 variable (T : α → α) (hT : MeasurePreserving T μ)
 variable (f g : α → ℝ) (hf : Integrable f μ) (hg : Integrable g μ)
 
+open Filter
+/-- The set of divergent points `{ x | sup_n ∑_{i=0}^{n} f(T^i x) = ∞}`. -/
+def divSet' := { x : α |  ∀ C : ℝ, ∃ n, C < birkhoffSum T f n x }
 
 /-- The set of divergent points `{ x | sup_n ∑_{i=0}^{n} f(T^i x) = ∞}`. -/
-def div_set := { x : α |  ∀ C : ℝ, ∃ n, C < birkhoffSum T f n x }
+def divSet'' := { x : α | Tendsto (fun n ↦ birkhoffSum T f n x) atTop atTop }
 
-theorem div_set_inv_aux (x : α) (hx : x ∈ div_set T f) :
+/-- The max of the `k`th Birkhoff sums for `k ≤ n`. -/
+noncomputable def maxOfSums (T : α → α) (f : α → ℝ) (x : α) (n : ℕ) : ℝ :=
+  match n with
+    | 0     => 0
+    | m + 1 => max (birkhoffSum T f (m + 1) x) (maxOfSums T f x m)
+
+/-- The max function is monotone increasing. -/
+theorem mono (x : α) (n : ℕ) : (maxOfSums T f x n) ≤ (maxOfSums T f x (n + 1)) := by
+  have h0 : (maxOfSums T f x (n + 1)) = max (birkhoffSum T f (n + 1) x) (maxOfSums T f x n) := by
+    exact rfl
+  rw [h0]
+  exact le_max_right (birkhoffSum T f (n + 1) x) (maxOfSums T f x n)
+
+/-- The set of divergent points `{ x | sup_n ∑_{i=0}^{n} f(T^i x) = ∞}`. -/
+def divSet := { x : α | Tendsto (fun n ↦ maxOfSums T f x n) atTop atTop }
+
+
+theorem divSet_inv_aux (x : α) (hx : x ∈ divSet' T f) :
     ∀ C : ℝ, ∃ n, 1 ≤ n ∧ C < birkhoffSum T f n x := sorry
 
 /-- The set of divergent points is invariant. -/
-theorem div_set_inv : T⁻¹' (div_set T f) = (div_set T f) := by
-  unfold div_set
+theorem divSet_inv : T⁻¹' (divSet' T f) = (divSet' T f) := by
+  unfold divSet'
   ext x
   have h1 (n : ℕ) (x : α) :
       birkhoffSum T f n (T x) = birkhoffSum T f (n + 1) x - f x := by
