@@ -34,29 +34,31 @@ variable (f g : α → ℝ) (hf : Integrable f μ) (hg : Integrable g μ)
 open Filter
 
 /-- The max of the `k`th Birkhoff sums for `k ≤ n`. -/
-def maxOfSums'' (T : α → α) (f : α → ℝ) (x : α) (n : ℕ) : ℝ :=
+def maxOfSums (x : α) (n : ℕ) : ℝ :=
     Finset.sup' (Finset.range (n + 1)) (Finset.nonempty_range_succ) (fun k ↦ birkhoffSum T f k x)
 
 /-- The `maxOfSums` is monotone increasing. -/
-theorem maxOfSums_mono'' (x : α) (n : ℕ) : (maxOfSums'' T f x n) ≤ (maxOfSums'' T f x (n + 1)) := by
+theorem maxOfSums_mono (x : α) (n : ℕ) : (maxOfSums T f x n) ≤ (maxOfSums T f x (n + 1)) := by
   exact Finset.sup'_mono (fun k ↦ birkhoffSum T f k x)
     (Finset.range_subset.mpr (Nat.le.step Nat.le.refl)) Finset.nonempty_range_succ
 
-/-- The max of the `k`th Birkhoff sums for `k ≤ n`. -/
-noncomputable def maxOfSums (T : α → α) (f : α → ℝ) (x : α) (n : ℕ) : ℝ :=
-  match n with
-    | 0     => 0
-    | m + 1 => max (birkhoffSum T f (m + 1) x) (maxOfSums T f x m)
-
-/-- The `maxOfSums` is monotone increasing. -/
-theorem maxOfSums_mono (x : α) (n : ℕ) : (maxOfSums T f x n) ≤ (maxOfSums T f x (n + 1)) := by
-  have h0 : (maxOfSums T f x (n + 1)) = max (birkhoffSum T f (n + 1) x) (maxOfSums T f x n) := by
-    exact rfl
-  rw [h0]
-  exact le_max_right (birkhoffSum T f (n + 1) x) (maxOfSums T f x n)
-
 /-- The set of divergent points `{ x | sup_n ∑_{i=0}^{n} f(T^i x) = ∞}`. -/
 def divSet := { x : α | Tendsto (fun n ↦ maxOfSums T f x n) atTop atTop }
+
+theorem maxOfSums_succ_image (x : α) (n : ℕ) :
+    maxOfSums T f (T x) n = maxOfSums T f x (n + 1) + f x := by
+
+  sorry
+
+/-- The set of divergent points is invariant. -/
+theorem divSet_inv : T⁻¹' (divSet T f) = (divSet T f) := by
+  ext x
+  unfold divSet
+  simp
+  have h1 := maxOfSums_succ_image T f x
+  --tendsto_map'_iff   ?
+
+  sorry
 
 /-- Convenient combination of terms. -/
 theorem birkhoffSum_succ_image (n : ℕ) (x : α) :
@@ -66,37 +68,36 @@ theorem birkhoffSum_succ_image (n : ℕ) (x : α) :
     simp
     exact add_sub (birkhoffSum T f n x) (f (T^[n] x)) (f x)
 
-theorem maxOfSums_succ_image (n : ℕ) (x : α) :
-    maxOfSums T f (T x) n = maxOfSums T f x (n + 1) + f x := by
+
+
+/- Here follows surplus stuff that might or might not be useful. -/
+
+/-- The max of the `k`th Birkhoff sums for `k ≤ n`. -/
+noncomputable def maxOfSumsAlt (T : α → α) (f : α → ℝ) (x : α) (n : ℕ) : ℝ :=
+  match n with
+    | 0     => 0
+    | m + 1 => max (birkhoffSum T f (m + 1) x) (maxOfSumsAlt T f x m)
+
+/-- The `maxOfSums` is monotone increasing. -/
+theorem maxOfSums_mono_alt (x : α) (n : ℕ) : (maxOfSumsAlt T f x n) ≤ (maxOfSumsAlt T f x (n + 1)) := by
+  have h0 : (maxOfSumsAlt T f x (n + 1)) = max (birkhoffSum T f (n + 1) x) (maxOfSumsAlt T f x n) := by
+    exact rfl
+  rw [h0]
+  exact le_max_right (birkhoffSum T f (n + 1) x) (maxOfSumsAlt T f x n)
+
+
+theorem maxOfSums_succ_image_alt (n : ℕ) (x : α) :
+    maxOfSumsAlt T f (T x) n = maxOfSumsAlt T f x (n + 1) + f x := by
   induction n
-  unfold maxOfSums
+  unfold maxOfSumsAlt
   simp
-  have h0 : maxOfSums T f x 0 = 0 := by
+  have h0 : maxOfSumsAlt T f x 0 = 0 := by
     exact rfl
   rw [h0]
 
   sorry
 
   sorry
-
-/-- The set of divergent points is invariant. -/
-theorem divSet_inv : T⁻¹' (divSet T f) = (divSet T f) := by
-  ext x
-  unfold divSet
-  have h1 :  (fun n ↦ maxOfSums T f (T x) n) = (fun n ↦ maxOfSums T f x (n + 1) + f x) := by
-    exact funext (fun n ↦ maxOfSums_succ_image T f n x)
-  constructor
-  simp
-  rw [h1]
-
-  sorry
-  simp
-  rw [h1]
-
-  sorry
-
-
-/- Here follows surplus stuff that might or might not be useful. -/
 
 -- Maybe problem relates to [https://github.com/leanprover/lean4/issues/1785]
 noncomputable def maxOfSums' (n : ℕ) (T : α → α) (f : α → ℝ) (x : α) :=
@@ -111,8 +112,8 @@ theorem valsOfSums_Nonempty (n : ℕ) (T : α → α) (f : α → ℝ) (x : α) 
   exact Finset.Nonempty.image h0 fun k ↦ birkhoffSum T f k x
 
 
-def maxOfSums'' (T : α → α) (f : α → ℝ) (x : α) (n : ℕ) : ℝ :=
-    Finset.sup' (Finset.range (n + 1)) (Finset.nonempty_range_succ) (fun k ↦ birkhoffSum T f k x)
+-- def maxOfSums'' (T : α → α) (f : α → ℝ) (x : α) (n : ℕ) : ℝ :=
+--     Finset.sup' (Finset.range (n + 1)) (Finset.nonempty_range_succ) (fun k ↦ birkhoffSum T f k x)
 
 -- noncomputable def maxOfSums'' (T : α → α) (f : α → ℝ) (x : α) (n : ℕ) : ℝ :=
 --     Finset.sup' (valsOfSums T f x n) (valsOfSums_Nonempty n T f x)
