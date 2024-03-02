@@ -32,11 +32,10 @@ variable (T : α → α) (hT : MeasurePreserving T μ)
 variable (f g : α → ℝ) (hf : Integrable f μ) (hg : Integrable g μ)
 
 open Filter
-/-- The set of divergent points `{ x | sup_n ∑_{i=0}^{n} f(T^i x) = ∞}`. -/
-def divSet' := { x : α |  ∀ C : ℝ, ∃ n, C < birkhoffSum T f n x }
 
-/-- The set of divergent points `{ x | sup_n ∑_{i=0}^{n} f(T^i x) = ∞}`. -/
-def divSet'' := { x : α | Tendsto (fun n ↦ birkhoffSum T f n x) atTop atTop }
+/-- The max of the `k`th Birkhoff sums for `k ≤ n`. -/
+def maxOfSums'' (T : α → α) (f : α → ℝ) (x : α) (n : ℕ) : ℝ :=
+    Finset.sup' (Finset.range (n + 1)) (Finset.nonempty_range_succ) (fun k ↦ birkhoffSum T f k x)
 
 /-- The max of the `k`th Birkhoff sums for `k ≤ n`. -/
 noncomputable def maxOfSums (T : α → α) (f : α → ℝ) (x : α) (n : ℕ) : ℝ :=
@@ -44,8 +43,8 @@ noncomputable def maxOfSums (T : α → α) (f : α → ℝ) (x : α) (n : ℕ) 
     | 0     => 0
     | m + 1 => max (birkhoffSum T f (m + 1) x) (maxOfSums T f x m)
 
-/-- The max function is monotone increasing. -/
-theorem mono (x : α) (n : ℕ) : (maxOfSums T f x n) ≤ (maxOfSums T f x (n + 1)) := by
+/-- The `maxOfSums` is monotone increasing. -/
+theorem maxOfSums_mono (x : α) (n : ℕ) : (maxOfSums T f x n) ≤ (maxOfSums T f x (n + 1)) := by
   have h0 : (maxOfSums T f x (n + 1)) = max (birkhoffSum T f (n + 1) x) (maxOfSums T f x n) := by
     exact rfl
   rw [h0]
@@ -54,12 +53,76 @@ theorem mono (x : α) (n : ℕ) : (maxOfSums T f x n) ≤ (maxOfSums T f x (n + 
 /-- The set of divergent points `{ x | sup_n ∑_{i=0}^{n} f(T^i x) = ∞}`. -/
 def divSet := { x : α | Tendsto (fun n ↦ maxOfSums T f x n) atTop atTop }
 
+/-- Convenient combination of terms. -/
+theorem birkhoffSum_succ_image (n : ℕ) (x : α) :
+      birkhoffSum T f n (T x) = birkhoffSum T f (n + 1) x - f x := by
+    rw [birkhoffSum_add T f n 1 x]
+    rw [eq_add_of_sub_eq' (birkhoffSum_apply_sub_birkhoffSum T f n x)]
+    simp
+    exact add_sub (birkhoffSum T f n x) (f (T^[n] x)) (f x)
 
-theorem divSet_inv_aux (x : α) (hx : x ∈ divSet' T f) :
+theorem maxOfSums_succ_image (n : ℕ) (x : α) :
+    maxOfSums T f (T x) n = maxOfSums T f x (n + 1) + f x := by
+  induction n
+  unfold maxOfSums
+  simp
+  have h0 : maxOfSums T f x 0 = 0 := by
+    exact rfl
+  rw [h0]
+
+  sorry
+
+  sorry
+
+/-- The set of divergent points is invariant. -/
+theorem divSet_inv : T⁻¹' (divSet T f) = (divSet T f) := by
+  ext x
+  unfold divSet
+  have h1 :  (fun n ↦ maxOfSums T f (T x) n) = (fun n ↦ maxOfSums T f x (n + 1) + f x) := by
+    exact funext (fun n ↦ maxOfSums_succ_image T f n x)
+  constructor
+  simp
+  rw [h1]
+
+  sorry
+  simp
+  rw [h1]
+
+  sorry
+
+
+/- Here follows surplus stuff that might or might not be useful. -/
+
+-- Maybe problem relates to [https://github.com/leanprover/lean4/issues/1785]
+noncomputable def maxOfSums' (n : ℕ) (T : α → α) (f : α → ℝ) (x : α) :=
+    ((List.range (n + 1)).map (fun k ↦ birkhoffSum T f k x)).maximum
+
+noncomputable def valsOfSums (T : α → α) (f : α → ℝ) (x : α) (n : ℕ) :=
+    (Finset.range (n + 1)).image (fun k ↦ birkhoffSum T f k x)
+
+theorem valsOfSums_Nonempty (n : ℕ) (T : α → α) (f : α → ℝ) (x : α) :
+    Finset.Nonempty (valsOfSums T f x n) := by
+  have h0 : (Finset.range (n + 1)).Nonempty := Finset.nonempty_range_succ
+  exact Finset.Nonempty.image h0 fun k ↦ birkhoffSum T f k x
+
+
+def maxOfSums'' (T : α → α) (f : α → ℝ) (x : α) (n : ℕ) : ℝ :=
+    Finset.sup' (Finset.range (n + 1)) (Finset.nonempty_range_succ) (fun k ↦ birkhoffSum T f k x)
+
+-- noncomputable def maxOfSums'' (T : α → α) (f : α → ℝ) (x : α) (n : ℕ) : ℝ :=
+--     Finset.sup' (valsOfSums T f x n) (valsOfSums_Nonempty n T f x)
+
+/-- The set of divergent points `{ x | sup_n ∑_{i=0}^{n} f(T^i x) = ∞}`. -/
+def divSet' := { x : α |  ∀ C : ℝ, ∃ n, C < birkhoffSum T f n x }
+
+/-- The set of divergent points `{ x | sup_n ∑_{i=0}^{n} f(T^i x) = ∞}`. -/
+def divSet'' := { x : α | Tendsto (fun n ↦ birkhoffSum T f n x) atTop atTop }
+
+theorem divSet_inv_aux' (x : α) (hx : x ∈ divSet' T f) :
     ∀ C : ℝ, ∃ n, 1 ≤ n ∧ C < birkhoffSum T f n x := sorry
 
 /-- The set of divergent points is invariant. -/
-theorem divSet_inv : T⁻¹' (divSet' T f) = (divSet' T f) := by
+theorem divSet_inv' : T⁻¹' (divSet' T f) = (divSet' T f) := by
   unfold divSet'
   ext x
   have h1 (n : ℕ) (x : α) :
@@ -91,8 +154,6 @@ theorem divSet_inv : T⁻¹' (divSet' T f) = (divSet' T f) := by
   rw [h8]
   exact lt_tsub_iff_right.mpr h6
 
--- def A := { x : α | Filter.Tendsto (fun n ↦ ∑ i in Finset.range n, f (T^[i] x)) Filter.atTop Filter.atTop }
-/- `A` is in `I = inv_sigma_algebra`. -/
 -- idea: is it better to define a new type measureable sets in alpha and then restrict to that type?
 -- def inv_sigma_algebra := { S : Set α | MeasurableSet S ∧ T⁻¹' S = S }
 def inv_sigma_algebra := { S : Set α | MeasurableSet S ∧ IsInvariant (fun n x ↦ T^[n] x) S }
