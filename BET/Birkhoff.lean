@@ -37,6 +37,11 @@ open Filter
 def maxOfSums'' (T : α → α) (f : α → ℝ) (x : α) (n : ℕ) : ℝ :=
     Finset.sup' (Finset.range (n + 1)) (Finset.nonempty_range_succ) (fun k ↦ birkhoffSum T f k x)
 
+/-- The `maxOfSums` is monotone increasing. -/
+theorem maxOfSums_mono'' (x : α) (n : ℕ) : (maxOfSums'' T f x n) ≤ (maxOfSums'' T f x (n + 1)) := by
+  exact Finset.sup'_mono (fun k ↦ birkhoffSum T f k x)
+    (Finset.range_subset.mpr (Nat.le.step Nat.le.refl)) Finset.nonempty_range_succ
+
 /-- The max of the `k`th Birkhoff sums for `k ≤ n`. -/
 noncomputable def maxOfSums (T : α → α) (f : α → ℝ) (x : α) (n : ℕ) : ℝ :=
   match n with
