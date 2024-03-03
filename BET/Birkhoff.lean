@@ -31,17 +31,25 @@ variable {μ : MeasureTheory.Measure α} [MeasureTheory.IsProbabilityMeasure μ]
 variable (T : α → α) (hT : MeasurePreserving T μ)
 variable (f g : α → ℝ) (hf : Integrable f μ) (hg : Integrable g μ)
 
-open Filter
 
-/-- The max of the `k`th Birkhoff sums for `k ≤ n`. -/
-def maxOfSums (x : α) (n : ℕ) : ℝ :=
-    Finset.sup' (Finset.range (n + 1)) (Finset.nonempty_range_succ) (fun k ↦ birkhoffSum T f k x)
+/-- The max of the first `n + 1` Birkhoff sums. Indexed such that:
+- `n = 0` corresponds to max of `{birkhoffSum T f 1 x}`,
+- `n = 1` corresponds to max of `{birkhoffSum T f 1 x, birkhoffSum T f 2 x}`, etc.
+(Indexing avoids the problem of the max of an empty set.) -/
+def maxOfSums (x : α) (n : ℕ) :=
+    Finset.sup' (Finset.range (n + 1)) (Finset.nonempty_range_succ)
+      (fun k ↦ birkhoffSum T f (k + 1) x)
+
+theorem maxOfSums_zero : maxOfSums T f x 0 = f x := by
+  unfold maxOfSums
+  simp
 
 /-- The `maxOfSums` is monotone increasing. -/
 theorem maxOfSums_mono (x : α) (n : ℕ) : (maxOfSums T f x n) ≤ (maxOfSums T f x (n + 1)) := by
-  exact Finset.sup'_mono (fun k ↦ birkhoffSum T f k x)
+  exact Finset.sup'_mono (fun k ↦ birkhoffSum T f (k + 1) x)
     (Finset.range_subset.mpr (Nat.le.step Nat.le.refl)) Finset.nonempty_range_succ
 
+open Filter in
 /-- The set of divergent points `{ x | sup_n ∑_{i=0}^{n} f(T^i x) = ∞}`. -/
 def divSet := { x : α | Tendsto (fun n ↦ maxOfSums T f x n) atTop atTop }
 
@@ -68,6 +76,37 @@ theorem birkhoffSum_succ_image (n : ℕ) (x : α) :
     simp
     exact add_sub (birkhoffSum T f n x) (f (T^[n] x)) (f x)
 
+theorem um : birkhoffSum T f 1 x = f x := by
+  exact birkhoffSum_one T f x
+
+
+/-- Claim 1 (Marco) -/
+theorem claim1 :
+    maxOfSums T f x (n + 1) - maxOfSums T f (T x) n = f x - min 0 (maxOfSums T f (T x) n) := by
+  -- `maxOfSums x (n + 1) = max { f, f + f ∘ T,..., f + f ∘ T + ... + f ∘ T^(n + 2) }`
+  -- `maxOfSums (T x) n   = max {    f ∘ T,    ...,     f ∘ T + ... + f ∘ T^(n + 2) }`
+  -- First find the location of the max term
+  obtain ⟨k, h5, h6⟩ := Finset.exists_max_image (Finset.range (n + 1)) (fun k ↦ birkhoffSum T f (k + 1) x) (Finset.nonempty_range_succ)
+
+
+  by_cases h_cases : maxOfSums T f x (n + 1) = birkhoffSum T f 1 x
+  -- Case when max is achieved by first element of the list
+  have h2 : maxOfSums T f (T x) n ≤ 0 := by sorry
+  have h4 : min 0 (maxOfSums T f (T x) n) = maxOfSums T f (T x) n := min_eq_right h2
+  rw [h4]
+  simp
+  simp at h_cases
+  exact h_cases
+  -- Other case when max is not achieved by the first element of the list
+  have h3 : 0 ≤ maxOfSums T f (T x) n := by sorry
+
+
+    -- ∃ x ∈ s, ∀ x' ∈ s, f x' ≤ f x := by
+    -- Finset.sup' (Finset.range (n + 1)) (Finset.nonempty_range_succ)
+    --   (fun k ↦ birkhoffSum T f (k + 1) x)
+
+
+  sorry
 
 
 /- Here follows surplus stuff that might or might not be useful. -/
@@ -122,7 +161,7 @@ theorem valsOfSums_Nonempty (n : ℕ) (T : α → α) (f : α → ℝ) (x : α) 
 def divSet' := { x : α |  ∀ C : ℝ, ∃ n, C < birkhoffSum T f n x }
 
 /-- The set of divergent points `{ x | sup_n ∑_{i=0}^{n} f(T^i x) = ∞}`. -/
-def divSet'' := { x : α | Tendsto (fun n ↦ birkhoffSum T f n x) atTop atTop }
+def divSet'' := { x : α | Filter.Tendsto (fun n ↦ birkhoffSum T f n x) Filter.atTop Filter.atTop }
 
 theorem divSet_inv_aux' (x : α) (hx : x ∈ divSet' T f) :
     ∀ C : ℝ, ∃ n, 1 ≤ n ∧ C < birkhoffSum T f n x := sorry
