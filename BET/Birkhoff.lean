@@ -42,7 +42,7 @@ def maxOfSums (x : α) (n : ℕ) :=
 
 theorem maxOfSums_zero : maxOfSums T f x 0 = f x := by
   unfold maxOfSums
-  simp
+  simp only [zero_add, Finset.range_one, Finset.sup'_singleton, birkhoffSum_one']
 
 /-- The `maxOfSums` is monotone increasing. -/
 theorem maxOfSums_mono (x : α) (n : ℕ) : (maxOfSums T f x n) ≤ (maxOfSums T f x (n + 1)) := by
@@ -79,24 +79,38 @@ theorem birkhoffSum_succ_image (n : ℕ) (x : α) :
 theorem um : birkhoffSum T f 1 x = f x := by
   exact birkhoffSum_one T f x
 
-
+open Finset in
 /-- Claim 1 (Marco) -/
 theorem claim1 :
     maxOfSums T f x (n + 1) - maxOfSums T f (T x) n = f x - min 0 (maxOfSums T f (T x) n) := by
   -- `maxOfSums x (n + 1) = max { f, f + f ∘ T,..., f + f ∘ T + ... + f ∘ T^(n + 2) }`
   -- `maxOfSums (T x) n   = max {    f ∘ T,    ...,     f ∘ T + ... + f ∘ T^(n + 2) }`
-  -- First find the location of the max term
-  obtain ⟨k, h5, h6⟩ := Finset.exists_max_image (Finset.range (n + 1)) (fun k ↦ birkhoffSum T f (k + 1) x) (Finset.nonempty_range_succ)
 
-
-  by_cases h_cases : maxOfSums T f x (n + 1) = birkhoffSum T f 1 x
+  -- Consider `maxOfSums T f x (n + 1)` and find the location of the max term
+  obtain ⟨k, h5, h6⟩ :=
+    exists_max_image (range (n + 1)) (fun k ↦ birkhoffSum T f (k + 1) x) (nonempty_range_succ)
   -- Case when max is achieved by first element of the list
+  by_cases h_cases :  k = 0 --
+  have h15 : maxOfSums T f x (n + 1) = birkhoffSum T f 1 x := sorry
+  rw [h_cases] at h6
+  simp at h6
+
+  have h8 (m : ℕ) : f x = birkhoffSum T f (m + 1) x - birkhoffSum T f m (T x) := by
+    rw [birkhoffSum_succ_image T f m x]
+    simp
+  have h9 : ∀ m < n + 1,  birkhoffSum T f m (T x) ≤ 0 := by
+    intros m h11
+    have h12 := h6 m h11
+    rw [h8 m] at h12
+    simp at h12
+    exact h12
+
   have h2 : maxOfSums T f (T x) n ≤ 0 := by sorry
   have h4 : min 0 (maxOfSums T f (T x) n) = maxOfSums T f (T x) n := min_eq_right h2
   rw [h4]
   simp
-  simp at h_cases
-  exact h_cases
+  simp at h15
+  exact h15
   -- Other case when max is not achieved by the first element of the list
   have h3 : 0 ≤ maxOfSums T f (T x) n := by sorry
 
