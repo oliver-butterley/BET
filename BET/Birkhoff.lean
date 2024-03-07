@@ -31,30 +31,52 @@ variable {μ : MeasureTheory.Measure α} [MeasureTheory.IsProbabilityMeasure μ]
 variable (T : α → α) (hT : MeasurePreserving T μ)
 variable (f g : α → ℝ) (hf : Integrable f μ) (hg : Integrable g μ)
 
-
+open Finset in
 /-- The max of the first `n + 1` Birkhoff sums. Indexed such that:
-- `n = 0` corresponds to max of `{birkhoffSum T f 1 x}`,
-- `n = 1` corresponds to max of `{birkhoffSum T f 1 x, birkhoffSum T f 2 x}`, etc.
-(Indexing avoids the problem of the max of an empty set.) -/
+- `n = 0` corresponds to `max {birkhoffSum T f 1 x}`,
+- `n = 1` corresponds to `max {birkhoffSum T f 1 x, birkhoffSum T f 2 x}`, etc.
+(This indexing avoids the problem of the max of an empty set.) -/
 def maxOfSums (x : α) (n : ℕ) :=
-    Finset.sup' (Finset.range (n + 1)) (Finset.nonempty_range_succ)
-      (fun k ↦ birkhoffSum T f (k + 1) x)
+    sup' (range (n + 1)) (nonempty_range_succ) (fun k ↦ birkhoffSum T f (k + 1) x)
 
-theorem maxOfSums_zero : maxOfSums T f x 0 = f x := by
+lemma maxOfSums_zero : maxOfSums T f x 0 = f x := by
   unfold maxOfSums
   simp only [zero_add, Finset.range_one, Finset.sup'_singleton, birkhoffSum_one']
 
-/-- The `maxOfSums` is monotone increasing. -/
-theorem maxOfSums_mono (x : α) (n : ℕ) : (maxOfSums T f x n) ≤ (maxOfSums T f x (n + 1)) := by
+/-- The `maxOfSums` is monotone. -/
+theorem maxOfSums_succ_le (x : α) (n : ℕ) : (maxOfSums T f x n) ≤ (maxOfSums T f x (n + 1)) := by
   exact Finset.sup'_mono (fun k ↦ birkhoffSum T f (k + 1) x)
     (Finset.range_subset.mpr (Nat.le.step Nat.le.refl)) Finset.nonempty_range_succ
+
+/-- The `maxOfSums` is monotone. -/
+theorem maxOfSums_le_le (x : α) (m n : ℕ) (hmn : m ≤ n) :
+    (maxOfSums T f x m) ≤ (maxOfSums T f x n) := by
+  induction' n with n hi
+  rw [Nat.le_zero.mp hmn]
+  rcases Nat.of_le_succ hmn with hc | hc
+  exact le_trans (hi hc) (maxOfSums_succ_le T f x n)
+  rw [hc]
+
+/-- The `maxOfSums` is monotone.
+(Uncertain which is the best phrasing to keep of these options.) -/
+theorem maxOfSums_le_le' (x : α) : Monotone (fun n ↦ maxOfSums T f x n) := by
+  unfold Monotone
+  intros n m hmn
+  exact maxOfSums_le_le T f x n m hmn
 
 open Filter in
 /-- The set of divergent points `{ x | sup_n ∑_{i=0}^{n} f(T^i x) = ∞}`. -/
 def divSet := { x : α | Tendsto (fun n ↦ maxOfSums T f x n) atTop atTop }
 
+/-- Shift and image for `maxOfSums`. -/
 theorem maxOfSums_succ_image (x : α) (n : ℕ) :
     maxOfSums T f (T x) n = maxOfSums T f x (n + 1) + f x := by
+  unfold maxOfSums
+
+
+  -- something wrong with this statement!
+
+
 
   sorry
 
@@ -76,12 +98,51 @@ theorem birkhoffSum_succ_image (n : ℕ) (x : α) :
     simp
     exact add_sub (birkhoffSum T f n x) (f (T^[n] x)) (f x)
 
-theorem um : birkhoffSum T f 1 x = f x := by
-  exact birkhoffSum_one T f x
+theorem um : birkhoffSum T f 1 x = f x := birkhoffSum_one T f x
+
+open Finset in
+/-- Isn't this available in a convenient way somewhere in mathlib. -/
+lemma range_succ_union (n : ℕ) : range (Nat.succ n) = range n ∪ {n} := by
+    ext k
+    simp only [mem_range, mem_union, mem_singleton]
+    exact Nat.lt_succ_iff_lt_or_eq
+
+open Finset in
+theorem claim1_aux (n : ℕ) (x : α) :
+    maxOfSums T f x (n + 1) = max (f x) (maxOfSums T f (T x) n) := by
+  unfold maxOfSums
+
+  let s1 : Finset ℕ := {0}
+  let s2 := filter (1 ≤ ·) (range (n + 1))
+  have h0 : range (n + 1) = s1 ∪ s2 := by
+    simp
+    ext k
+    simp
+    constructor
+    by_cases h2 : k = 0
+    rw [h2]
+    exact fun a ↦ Or.inl rfl
+    have h4 : NeZero k := by exact { out := h2 }
+    have h3 : 1 ≤ k := NeZero.one_le
+    intro h5
+    right
+    exact ⟨h5, h3⟩
+    intro h6
+    aesop
+    -- It's a proof but surely there is a simpler way to write this.
+
+  have h1 : range (n + 1) = insert 0 s2 := h0
+
+  -- have h2 : sup' (range (n + 1)) (nonempty_range_succ) (fun k ↦ birkhoffSum T f (k + 1) x)
+  -- sup'_insert
+  -- (insert b s).sup' (insert_nonempty _ _) f = f b ⊔ s.sup' H f
+
+
+  sorry
 
 open Finset in
 /-- Claim 1 (Marco) -/
-theorem claim1 :
+theorem claim1 (n : ℕ) (x : α) :
     maxOfSums T f x (n + 1) - maxOfSums T f (T x) n = f x - min 0 (maxOfSums T f (T x) n) := by
   -- `maxOfSums x (n + 1) = max { f, f + f ∘ T,..., f + f ∘ T + ... + f ∘ T^(n + 2) }`
   -- `maxOfSums (T x) n   = max {    f ∘ T,    ...,     f ∘ T + ... + f ∘ T^(n + 2) }`
@@ -132,7 +193,7 @@ noncomputable def maxOfSumsAlt (T : α → α) (f : α → ℝ) (x : α) (n : �
     | m + 1 => max (birkhoffSum T f (m + 1) x) (maxOfSumsAlt T f x m)
 
 /-- The `maxOfSums` is monotone increasing. -/
-theorem maxOfSums_mono_alt (x : α) (n : ℕ) : (maxOfSumsAlt T f x n) ≤ (maxOfSumsAlt T f x (n + 1)) := by
+theorem maxOfSums_succ_le_alt (x : α) (n : ℕ) : (maxOfSumsAlt T f x n) ≤ (maxOfSumsAlt T f x (n + 1)) := by
   have h0 : (maxOfSumsAlt T f x (n + 1)) = max (birkhoffSum T f (n + 1) x) (maxOfSumsAlt T f x n) := by
     exact rfl
   rw [h0]
