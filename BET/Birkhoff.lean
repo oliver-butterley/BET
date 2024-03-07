@@ -20,14 +20,13 @@ This file defines Birkhoff sums, other related notions and proves Birkhoff's erg
 
 section Ergodic_Theory
 
-open BigOperators MeasureTheory
-
+open MeasureTheory
 /-
 - `T` is a measure preserving map of a probability space `(α, μ)`,
 - `f g : α → ℝ` are integrable.
 -/
 variable {α : Type*} [MeasurableSpace α]
-variable {μ : MeasureTheory.Measure α} [MeasureTheory.IsProbabilityMeasure μ]
+variable {μ : Measure α} [IsProbabilityMeasure μ]
 variable (T : α → α) (hT : MeasurePreserving T μ)
 variable (f g : α → ℝ) (hf : Integrable f μ) (hg : Integrable g μ)
 
@@ -68,24 +67,12 @@ open Filter in
 /-- The set of divergent points `{ x | sup_n ∑_{i=0}^{n} f(T^i x) = ∞}`. -/
 def divSet := { x : α | Tendsto (fun n ↦ maxOfSums T f x n) atTop atTop }
 
-/-- Shift and image for `maxOfSums`. -/
-theorem maxOfSums_succ_image (x : α) (n : ℕ) :
-    maxOfSums T f (T x) n = maxOfSums T f x (n + 1) + f x := by
-  unfold maxOfSums
-
-
-  -- something wrong with this statement!
-
-
-
-  sorry
-
 /-- The set of divergent points is invariant. -/
 theorem divSet_inv : T⁻¹' (divSet T f) = (divSet T f) := by
   ext x
   unfold divSet
   simp
-  have h1 := maxOfSums_succ_image T f x
+
   --tendsto_map'_iff   ?
 
   sorry
@@ -98,93 +85,69 @@ theorem birkhoffSum_succ_image (n : ℕ) (x : α) :
     simp
     exact add_sub (birkhoffSum T f n x) (f (T^[n] x)) (f x)
 
-theorem um : birkhoffSum T f 1 x = f x := birkhoffSum_one T f x
-
-open Finset in
-/-- Isn't this available in a convenient way somewhere in mathlib. -/
-lemma range_succ_union (n : ℕ) : range (Nat.succ n) = range n ∪ {n} := by
-    ext k
-    simp only [mem_range, mem_union, mem_singleton]
-    exact Nat.lt_succ_iff_lt_or_eq
-
-open Finset in
-theorem claim1_aux (n : ℕ) (x : α) :
-    maxOfSums T f x (n + 1) = max (f x) (maxOfSums T f (T x) n) := by
-  unfold maxOfSums
-
-  let s1 : Finset ℕ := {0}
-  let s2 := filter (1 ≤ ·) (range (n + 1))
-  have h0 : range (n + 1) = s1 ∪ s2 := by
-    simp
-    ext k
-    simp
-    constructor
-    by_cases h2 : k = 0
-    rw [h2]
-    exact fun a ↦ Or.inl rfl
-    have h4 : NeZero k := by exact { out := h2 }
-    have h3 : 1 ≤ k := NeZero.one_le
-    intro h5
-    right
-    exact ⟨h5, h3⟩
-    intro h6
-    aesop
-    -- It's a proof but surely there is a simpler way to write this.
-
-  have h1 : range (n + 1) = insert 0 s2 := h0
-
-  -- have h2 : sup' (range (n + 1)) (nonempty_range_succ) (fun k ↦ birkhoffSum T f (k + 1) x)
-  -- sup'_insert
-  -- (insert b s).sup' (insert_nonempty _ _) f = f b ⊔ s.sup' H f
-
-
-  sorry
-
 open Finset in
 /-- Claim 1 (Marco) -/
-theorem claim1 (n : ℕ) (x : α) :
+theorem maxOfSums_succ_image (n : ℕ) (x : α) :
     maxOfSums T f x (n + 1) - maxOfSums T f (T x) n = f x - min 0 (maxOfSums T f (T x) n) := by
-  -- `maxOfSums x (n + 1) = max { f, f + f ∘ T,..., f + f ∘ T + ... + f ∘ T^(n + 2) }`
-  -- `maxOfSums (T x) n   = max {    f ∘ T,    ...,     f ∘ T + ... + f ∘ T^(n + 2) }`
+  -- Consider `maxOfSums T f x (n + 1) = max {birkhoffSum T f 1 x,..., birkhoffSum T f (n + 2) x}`
+  by_cases hc : ∀ k ≤ n, birkhoffSum T f (k + 2) x ≤ birkhoffSum T f 1 x
+  -- Case when max is achieved by first element.
+  have h0 : maxOfSums T f x (n + 1) = birkhoffSum T f 1 x := by
+    -- using `hc` and that `birkhoffSum T f 1 x` is in the sup set.
+    unfold maxOfSums
+    -- sup'_le_iff ?
 
-  -- Consider `maxOfSums T f x (n + 1)` and find the location of the max term
-  obtain ⟨k, h5, h6⟩ :=
-    exists_max_image (range (n + 1)) (fun k ↦ birkhoffSum T f (k + 1) x) (nonempty_range_succ)
-  -- Case when max is achieved by first element of the list
-  by_cases h_cases :  k = 0 --
-  have h15 : maxOfSums T f x (n + 1) = birkhoffSum T f 1 x := sorry
-  rw [h_cases] at h6
-  simp at h6
+    sorry
+  have h1 : birkhoffSum T f 1 x = f x := birkhoffSum_one T f x
+  have h2 : ∀ k, birkhoffSum T f (k + 1) (T x) = birkhoffSum T f (k + 2) x - f x := by
+    intro k
+    exact birkhoffSum_succ_image T f (k + 1) x
+  have h3 : ∀ k ≤ n, birkhoffSum T f (k + 1) (T x) ≤ 0 := by
+    intros k hk
+    rw [h2]
+    rw [h1] at hc
+    simp only [tsub_le_iff_right, zero_add]
+    exact hc k hk
+  have h4 : maxOfSums T f (T x) n ≤ 0 := by
+    unfold maxOfSums
+    simp only [sup'_le_iff, mem_range]
+    intros k hk
+    rw [Nat.lt_succ] at hk
+    exact h3 k hk
+  have h5 : min 0 (maxOfSums T f (T x) n) = maxOfSums T f (T x) n := by
+    exact min_eq_right h4
+  linarith
+  -- Other case when max is not achieved by the first element
+  have h6 : maxOfSums T f x (n + 1) =
+      sup' (range (n + 1)) (nonempty_range_succ) (fun k ↦ birkhoffSum T f (k + 2) x) := by
+    -- Since the max is not achieved by the first element reduce to max over other terms.
 
-  have h8 (m : ℕ) : f x = birkhoffSum T f (m + 1) x - birkhoffSum T f m (T x) := by
-    rw [birkhoffSum_succ_image T f m x]
-    simp
-  have h9 : ∀ m < n + 1,  birkhoffSum T f m (T x) ≤ 0 := by
-    intros m h11
-    have h12 := h6 m h11
-    rw [h8 m] at h12
-    simp at h12
-    exact h12
+    sorry
+  have h7 : maxOfSums T f (T x) n =
+      sup' (range (n + 1)) (nonempty_range_succ) (fun k ↦ birkhoffSum T f (k + 1) (T x)) := by
+    exact rfl
+  have h10 : maxOfSums T f x (n + 1) - maxOfSums T f (T x) n = f x := by
+    rw [h6, h7]
+    -- use birkhoffSum_succ_image
 
-  have h2 : maxOfSums T f (T x) n ≤ 0 := by sorry
-  have h4 : min 0 (maxOfSums T f (T x) n) = maxOfSums T f (T x) n := min_eq_right h2
-  rw [h4]
-  simp
-  simp at h15
-  exact h15
-  -- Other case when max is not achieved by the first element of the list
-  have h3 : 0 ≤ maxOfSums T f (T x) n := by sorry
+    sorry
+  have h8 : 0 ≤ maxOfSums T f (T x) n := by
 
-
-    -- ∃ x ∈ s, ∀ x' ∈ s, f x' ≤ f x := by
-    -- Finset.sup' (Finset.range (n + 1)) (Finset.nonempty_range_succ)
-    --   (fun k ↦ birkhoffSum T f (k + 1) x)
+    sorry
+  have h9 : min 0 (maxOfSums T f (T x) n) = 0 := by
+    exact min_eq_left h8
+  rw [h9, h6, h7]
+  simp_all only [birkhoffSum_one', not_forall, not_le, exists_prop, min_eq_left_iff, le_sup'_iff,
+      mem_range, sub_zero]
 
 
-  sorry
 
 
+
+-------------------------------------------------------------------
 /- Here follows surplus stuff that might or might not be useful. -/
+
+
 
 /-- The max of the `k`th Birkhoff sums for `k ≤ n`. -/
 noncomputable def maxOfSumsAlt (T : α → α) (f : α → ℝ) (x : α) (n : ℕ) : ℝ :=
@@ -200,18 +163,6 @@ theorem maxOfSums_succ_le_alt (x : α) (n : ℕ) : (maxOfSumsAlt T f x n) ≤ (m
   exact le_max_right (birkhoffSum T f (n + 1) x) (maxOfSumsAlt T f x n)
 
 
-theorem maxOfSums_succ_image_alt (n : ℕ) (x : α) :
-    maxOfSumsAlt T f (T x) n = maxOfSumsAlt T f x (n + 1) + f x := by
-  induction n
-  unfold maxOfSumsAlt
-  simp
-  have h0 : maxOfSumsAlt T f x 0 = 0 := by
-    exact rfl
-  rw [h0]
-
-  sorry
-
-  sorry
 
 -- Maybe problem relates to [https://github.com/leanprover/lean4/issues/1785]
 noncomputable def maxOfSums' (n : ℕ) (T : α → α) (f : α → ℝ) (x : α) :=
@@ -238,8 +189,8 @@ def divSet' := { x : α |  ∀ C : ℝ, ∃ n, C < birkhoffSum T f n x }
 /-- The set of divergent points `{ x | sup_n ∑_{i=0}^{n} f(T^i x) = ∞}`. -/
 def divSet'' := { x : α | Filter.Tendsto (fun n ↦ birkhoffSum T f n x) Filter.atTop Filter.atTop }
 
-theorem divSet_inv_aux' (x : α) (hx : x ∈ divSet' T f) :
-    ∀ C : ℝ, ∃ n, 1 ≤ n ∧ C < birkhoffSum T f n x := sorry
+-- theorem divSet_inv_aux' (x : α) (hx : x ∈ divSet' T f) :
+--     ∀ C : ℝ, ∃ n, 1 ≤ n ∧ C < birkhoffSum T f n x := sorry
 
 /-- The set of divergent points is invariant. -/
 theorem divSet_inv' : T⁻¹' (divSet' T f) = (divSet' T f) := by
