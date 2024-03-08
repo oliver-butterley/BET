@@ -31,10 +31,9 @@ variable (T : α → α) (hT : MeasurePreserving T μ)
 variable (f g : α → ℝ) (hf : Integrable f μ) (hg : Integrable g μ)
 
 open Finset in
-/-- The max of the first `n + 1` Birkhoff sums. Indexed such that:
-- `n = 0` corresponds to `max {birkhoffSum T f 1 x}`,
-- `n = 1` corresponds to `max {birkhoffSum T f 1 x, birkhoffSum T f 2 x}`, etc.
-(This indexing avoids the problem of the max of an empty set.) -/
+/-- The max of the first `n + 1` Birkhoff sums.
+I.e., `maxOfSums T f x n` corresponds to `max {birkhoffSum T f 1 x,..., birkhoffSum T f (n + 1) x}`.
+Indexing choice avoids max of empty set issue. -/
 def maxOfSums (x : α) (n : ℕ) :=
     sup' (range (n + 1)) (nonempty_range_succ) (fun k ↦ birkhoffSum T f (k + 1) x)
 
@@ -69,11 +68,6 @@ def divSet := { x : α | Tendsto (fun n ↦ maxOfSums T f x n) atTop atTop }
 
 /-- The set of divergent points is invariant. -/
 theorem divSet_inv : T⁻¹' (divSet T f) = (divSet T f) := by
-  ext x
-  unfold divSet
-  simp
-
-  --tendsto_map'_iff   ?
 
   sorry
 
@@ -85,24 +79,46 @@ theorem birkhoffSum_succ_image (n : ℕ) (x : α) :
     simp
     exact add_sub (birkhoffSum T f n x) (f (T^[n] x)) (f x)
 
+-- TODO: clean the following, enquire if there is an easier way to extract it from mathlib.
+/-- Would expect this to be in `Mathlib/Data/Finset/Lattice`. -/
+theorem sup'_eq_iff_le {s : Finset β} [SemilatticeSup α] (H : s.Nonempty) (f : β → α) (hs : a ∈ s) :
+    s.sup' H f = f a ↔ ∀ b ∈ s, f b ≤ f a := by
+  constructor
+  intros h0 b h2
+  rw [← h0]
+  exact Finset.le_sup' f h2
+  intro h1
+  have hle : s.sup' H f ≤ f a := by
+    simp only [Finset.sup'_le_iff]
+    exact h1
+  exact (LE.le.ge_iff_eq hle).mp (Finset.le_sup' f hs)
+
 open Finset in
 /-- Claim 1 (Marco) -/
 theorem maxOfSums_succ_image (n : ℕ) (x : α) :
     maxOfSums T f x (n + 1) - maxOfSums T f (T x) n = f x - min 0 (maxOfSums T f (T x) n) := by
   -- Consider `maxOfSums T f x (n + 1) = max {birkhoffSum T f 1 x,..., birkhoffSum T f (n + 2) x}`
-  by_cases hc : ∀ k ≤ n, birkhoffSum T f (k + 2) x ≤ birkhoffSum T f 1 x
-  -- Case when max is achieved by first element.
+  by_cases hc : ∀ k ≤ n + 1, birkhoffSum T f (k + 1) x ≤ birkhoffSum T f 1 x
+  -- Case when the max is achieved by first element.
   have h0 : maxOfSums T f x (n + 1) = birkhoffSum T f 1 x := by
-    -- using `hc` and that `birkhoffSum T f 1 x` is in the sup set.
     unfold maxOfSums
-    -- sup'_le_iff ?
-
-    sorry
+    rw [birkhoffSum_one']
+    rw [birkhoffSum_one'] at hc
+    have h12 : (range (n + 1 + 1)).Nonempty := nonempty_range_succ
+    have h13 : 0 ∈ (range (n + 1 + 1)) := by
+      refine mem_range.mpr (Nat.add_pos_right (n + 1) Nat.le.refl)
+    have h11 := sup'_eq_iff_le h12 (fun k ↦ birkhoffSum T f (k + 1) x) h13
+    simp only [zero_add, birkhoffSum_one', mem_range] at h11
+    have h15 : ∀ b < n + 1 + 1, birkhoffSum T f (b + 1) x ≤ f x := by
+      intros k h16
+      have h17 : k ≤ n + 1 := Nat.lt_succ.mp h16
+      exact hc k h17
+    exact h11.mpr h15
   have h1 : birkhoffSum T f 1 x = f x := birkhoffSum_one T f x
-  have h2 : ∀ k, birkhoffSum T f (k + 1) (T x) = birkhoffSum T f (k + 2) x - f x := by
+  have h2 : ∀ k, birkhoffSum T f k (T x) = birkhoffSum T f (k + 1) x - f x := by
     intro k
-    exact birkhoffSum_succ_image T f (k + 1) x
-  have h3 : ∀ k ≤ n, birkhoffSum T f (k + 1) (T x) ≤ 0 := by
+    exact birkhoffSum_succ_image T f k x
+  have h3 : ∀ k ≤ n + 1, birkhoffSum T f k (T x) ≤ 0 := by
     intros k hk
     rw [h2]
     rw [h1] at hc
@@ -113,7 +129,7 @@ theorem maxOfSums_succ_image (n : ℕ) (x : α) :
     simp only [sup'_le_iff, mem_range]
     intros k hk
     rw [Nat.lt_succ] at hk
-    exact h3 k hk
+    refine h3 (k + 1) (Nat.add_le_add hk Nat.le.refl)
   have h5 : min 0 (maxOfSums T f (T x) n) = maxOfSums T f (T x) n := by
     exact min_eq_right h4
   linarith
