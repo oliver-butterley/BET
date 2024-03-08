@@ -133,21 +133,30 @@ theorem maxOfSums_succ_image (n : ℕ) (x : α) :
   have h5 : min 0 (maxOfSums T f (T x) n) = maxOfSums T f (T x) n := by
     exact min_eq_right h4
   linarith
-  -- Other case when max is not achieved by the first element
+  -- Case when max is not achieved by the first element
   have h6 : maxOfSums T f x (n + 1) =
       sup' (range (n + 1)) (nonempty_range_succ) (fun k ↦ birkhoffSum T f (k + 2) x) := by
     -- Since the max is not achieved by the first element reduce to max over other terms.
+    push_neg at hc
+    unfold maxOfSums
 
+    -- sup can ignore first term because of hc
     sorry
   have h7 : maxOfSums T f (T x) n =
       sup' (range (n + 1)) (nonempty_range_succ) (fun k ↦ birkhoffSum T f (k + 1) (T x)) := by
     exact rfl
   have h10 : maxOfSums T f x (n + 1) - maxOfSums T f (T x) n = f x := by
     rw [h6, h7]
-    -- use birkhoffSum_succ_image
+    have h18 (k : ℕ) := birkhoffSum_succ_image T f (k + 1) x
+    have h19 :
+        (fun k ↦ birkhoffSum T f (k + 2) x) = (fun k ↦ birkhoffSum T f (k + 1) (T x) + f x) := by
+      aesop
+    rw [h19]
 
+    -- how does sup commute with functions?
     sorry
   have h8 : 0 ≤ maxOfSums T f (T x) n := by
+    unfold maxOfSums
 
     sorry
   have h9 : min 0 (maxOfSums T f (T x) n) = 0 := by
