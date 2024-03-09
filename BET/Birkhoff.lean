@@ -66,36 +66,6 @@ open Filter in
 /-- The set of divergent points `{ x | sup_n ∑_{i=0}^{n} f(T^i x) = ∞}`. -/
 def divSet := { x : α | Tendsto (fun n ↦ maxOfSums T f x n) atTop atTop }
 
-open Filter in
-/-- The set of divergent points is invariant. -/
-theorem divSet_inv : T⁻¹' (divSet T f) = (divSet T f) := by
-    unfold divSet
-    simp
-    ext x
-    constructor
-    intro hx
-    simp at hx
-    simp
-
-    /-
-    By Claim 1 we know that
-    `maxOfSums T f x (n + 1) = f x + maxOfSums T f (T x) n - min 0 (maxOfSums T f (T x) n)`
-    If `maxOfSums T f (T x) n` → ∞ then, for large n, `min 0 (maxOfSums T f (T x) n) = 0` and
-    `maxOfSums T f x (n + 1) = f x + maxOfSums T f (T x) n`.
-    Consequently `maxOfSums T f x (n + 1)` → ∞.
-    -/
-    {sorry}
-
-    /-
-    On the other hand, again by Claim 1,
-    `maxOfSums T f (T x) n = maxOfSums T f x (n + 1) - f x + min 0 (maxOfSums T f (T x) n)`
-    If `maxOfSums T f x (n + 1)` → ∞ then, for large n, `min 0 (maxOfSums T f (T x) n) = 0` and
-    `maxOfSums T f (T x) n = maxOfSums T f x (n + 1) - f x`.
-    Consequently `maxOfSums T f (T x) n` → ∞.
-    -/
-
-    sorry
-
 /-- Convenient combination of `birkhoffSum` terms. -/
 theorem birkhoffSum_succ_image (n : ℕ) (x : α) :
       birkhoffSum T f n (T x) = birkhoffSum T f (n + 1) x - f x := by
@@ -223,6 +193,75 @@ theorem maxOfSums_succ_image (n : ℕ) (x : α) :
   rw [h9, h6, h7]
 
   sorry
+
+
+
+open Filter in
+/-- The set of divergent points is invariant. -/
+theorem divSet_inv : T⁻¹' (divSet T f) = (divSet T f) := by
+
+    unfold divSet
+    simp
+    ext x
+
+    -- separate the ↔
+    constructor
+    · intro hx
+      simp at hx
+      simp
+
+      -- we take advantage of claim 1
+      have ha (n : ℕ) := maxOfSums_succ_image T f n x
+
+      -- since `maxOfSums T f (T x) n` → ∞, eventually `min 0 (maxOfSums T f (T x) n) = 0`
+      have h1 : ∀ᶠ n in atTop, min 0 (maxOfSums T f (T x) n) = 0 := by
+        have h0 : ∀ᶠ n in atTop, 0 ≤ maxOfSums T f (T x) n := by
+          exact Tendsto.eventually_ge_atTop hx 0
+        simp at h0
+        simp
+        obtain ⟨k,hk⟩ := h0
+        use k
+
+      -- eventually we have a precise equality between the two maxOfSums
+      have h2 : ∀ᶠ n in atTop, maxOfSums T f (T x) n = maxOfSums T f x (n + 1) - f x := by
+        simp only [eventually_atTop, ge_iff_le] at h1
+        obtain ⟨k,hk⟩ := h1
+        simp only [eventually_atTop, ge_iff_le]
+        use k
+        intros m hm
+        have h3 := ha m
+        have h4 := hk m hm
+        rw [h4] at h3
+        rw [sub_zero] at h3
+        linarith
+
+      -- use the eventual equality
+      have h5 : Tendsto (fun n ↦ maxOfSums T f x (n + 1) - f x) atTop atTop := by
+        exact Tendsto.congr' h2 hx
+
+      -- rearrange using properties of `Tendsto`
+      have h6 : Tendsto (fun n ↦ maxOfSums T f x (n + 1)) atTop atTop := by
+        have h7 := tendsto_atTop_add_const_right atTop (f x) h5
+        simp at h7
+        exact h7
+
+      refine' (tendsto_add_atTop_iff_nat 1).mp _
+      exact h6
+
+    · intro hx
+      simp at hx
+      simp
+
+      sorry
+
+    /-
+    On the other hand, again by Claim 1,
+    `maxOfSums T f (T x) n = maxOfSums T f x (n + 1) - f x + min 0 (maxOfSums T f (T x) n)`
+    If `maxOfSums T f x (n + 1)` → ∞ then, for large n, `min 0 (maxOfSums T f (T x) n) = 0` and
+    `maxOfSums T f (T x) n = maxOfSums T f x (n + 1) - f x`.
+    Consequently `maxOfSums T f (T x) n` → ∞.
+    -/
+
 
 
 -------------------------------------------------------------------
