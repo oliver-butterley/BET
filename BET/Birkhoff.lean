@@ -69,6 +69,30 @@ def divSet := { x : α | Tendsto (fun n ↦ maxOfSums T f x n) atTop atTop }
 open Filter in
 /-- The set of divergent points is invariant. -/
 theorem divSet_inv : T⁻¹' (divSet T f) = (divSet T f) := by
+    unfold divSet
+    simp
+    ext x
+    constructor
+    intro hx
+    simp at hx
+    simp
+
+    /-
+    By Claim 1 we know that
+    `maxOfSums T f x (n + 1) = f x + maxOfSums T f (T x) n - min 0 (maxOfSums T f (T x) n)`
+    If `maxOfSums T f (T x) n` → ∞ then, for large n, `min 0 (maxOfSums T f (T x) n) = 0` and
+    `maxOfSums T f x (n + 1) = f x + maxOfSums T f (T x) n`.
+    Consequently `maxOfSums T f x (n + 1)` → ∞.
+    -/
+    {sorry}
+
+    /-
+    On the other hand, again by Claim 1,
+    `maxOfSums T f (T x) n = maxOfSums T f x (n + 1) - f x + min 0 (maxOfSums T f (T x) n)`
+    If `maxOfSums T f x (n + 1)` → ∞ then, for large n, `min 0 (maxOfSums T f (T x) n) = 0` and
+    `maxOfSums T f (T x) n = maxOfSums T f x (n + 1) - f x`.
+    Consequently `maxOfSums T f (T x) n` → ∞.
+    -/
 
     sorry
 
@@ -287,8 +311,6 @@ theorem divSet_inv' : T⁻¹' (divSet' T f) = (divSet' T f) := by
 def inv_sigma_algebra := { S : Set α | MeasurableSet S ∧ IsInvariant (fun n x ↦ T^[n] x) S }
 -- `IsInvariant` is defined as: a set s ⊆ α is invariant under ϕ : τ → α → α if ϕ t s ⊆ s for all t in τ.
 
-
-/- define `Φ_n : max { ∑_{i=0}^{n} φ ∘ T^i }_{k ≤ n}` -/
 
 /- ∀ `x ∈ A`, `Φ_{n+1}(x) - Φ_{n}(T(x)) = φ(x) - min(0,Φ_{n}(T(x))) ≥ φ(x)` decreases to `φ(x)`. -/
 
