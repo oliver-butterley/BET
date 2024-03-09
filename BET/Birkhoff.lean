@@ -71,7 +71,7 @@ theorem divSet_inv : T⁻¹' (divSet T f) = (divSet T f) := by
 
   sorry
 
-/-- Convenient combination of terms. -/
+/-- Convenient combination of `birkhoffSum` terms. -/
 theorem birkhoffSum_succ_image (n : ℕ) (x : α) :
       birkhoffSum T f n (T x) = birkhoffSum T f (n + 1) x - f x := by
     rw [birkhoffSum_add T f n 1 x]
@@ -92,6 +92,24 @@ theorem sup'_eq_iff_le {s : Finset β} [SemilatticeSup α] (H : s.Nonempty) (f :
     simp only [Finset.sup'_le_iff]
     exact h1
   exact (LE.le.ge_iff_eq hle).mp (Finset.le_sup' f hs)
+
+open Finset in
+/-- Divide a range into two parts. Maybe this exists in mathlib? Simpler way to write the proof?-/
+theorem range_union (n m : ℕ) : range (n + m) = (range n) ∪ (filter (n ≤ ·) (range (n + m))) := by
+  ext k
+  constructor
+  by_cases hc : k < n
+  intro hkr
+  exact mem_union.mpr (Or.inl (mem_range.mpr hc))
+  push_neg at hc
+  intro hkr
+  exact mem_union_right (range n) (mem_filter.mpr { left := hkr, right := hc })
+  intros hku
+  simp
+  simp at hku
+  rcases hku with h1 | h2
+  exact Nat.lt_add_right m h1
+  exact h2.left
 
 open Finset in
 /-- Claim 1 (Marco) -/
@@ -130,17 +148,32 @@ theorem maxOfSums_succ_image (n : ℕ) (x : α) :
     intros k hk
     rw [Nat.lt_succ] at hk
     refine h3 (k + 1) (Nat.add_le_add hk Nat.le.refl)
-  have h5 : min 0 (maxOfSums T f (T x) n) = maxOfSums T f (T x) n := by
-    exact min_eq_right h4
+  have h5 : min 0 (maxOfSums T f (T x) n) = maxOfSums T f (T x) n := min_eq_right h4
   linarith
   -- Case when max is not achieved by the first element
+  push_neg at hc
+  let bS := fun k ↦ birkhoffSum T f (k + 1) x
+  let s1 := range 1
+  let s2 := filter (1 ≤ ·) (range (n + 2))
+  have h19 : range (n + 2) = s1 ∪ s2 := by
+    have h20 := range_union 1 (n + 1)
+    rw [Nat.one_add (n + 1)] at h20
+    exact h20
+  have h21 : s2.Nonempty := by
+    simp
+    use 1
+
+    sorry
+  have h17 : sup' (range (n + 2)) nonempty_range_succ bS = bS 0 ⊔ sup' s2 h21 bS := by
+    -- Now use `sup'_union`, `range_union` to divide `maxOfSums T f x (n + 1)` into 2 pieces.
+
+    sorry
+
   have h6 : maxOfSums T f x (n + 1) =
       sup' (range (n + 1)) (nonempty_range_succ) (fun k ↦ birkhoffSum T f (k + 2) x) := by
-    -- Since the max is not achieved by the first element reduce to max over other terms.
-    push_neg at hc
     unfold maxOfSums
+    -- Since `hc`, the max is not achieved by the first element reduce to max over other terms.
 
-    -- sup can ignore first term because of hc
     sorry
   have h7 : maxOfSums T f (T x) n =
       sup' (range (n + 1)) (nonempty_range_succ) (fun k ↦ birkhoffSum T f (k + 1) (T x)) := by
@@ -150,10 +183,11 @@ theorem maxOfSums_succ_image (n : ℕ) (x : α) :
     have h18 (k : ℕ) := birkhoffSum_succ_image T f (k + 1) x
     have h19 :
         (fun k ↦ birkhoffSum T f (k + 2) x) = (fun k ↦ birkhoffSum T f (k + 1) (T x) + f x) := by
-      aesop
+
+      sorry
     rw [h19]
 
-    -- how does sup commute with functions?
+    -- Use `sup'_comm` to allow sup to commute with the function.
     sorry
   have h8 : 0 ≤ maxOfSums T f (T x) n := by
     unfold maxOfSums
@@ -162,8 +196,7 @@ theorem maxOfSums_succ_image (n : ℕ) (x : α) :
   have h9 : min 0 (maxOfSums T f (T x) n) = 0 := by
     exact min_eq_left h8
   rw [h9, h6, h7]
-  simp_all only [birkhoffSum_one', not_forall, not_le, exists_prop, min_eq_left_iff, le_sup'_iff,
-      mem_range, sub_zero]
+
 
 
 
