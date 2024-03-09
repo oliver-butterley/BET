@@ -41,12 +41,12 @@ lemma maxOfSums_zero : maxOfSums T f x 0 = f x := by
   unfold maxOfSums
   simp only [zero_add, Finset.range_one, Finset.sup'_singleton, birkhoffSum_one']
 
-/-- The `maxOfSums` is monotone. -/
+/-- `maxOfSums` is monotone (one step version). -/
 theorem maxOfSums_succ_le (x : α) (n : ℕ) : (maxOfSums T f x n) ≤ (maxOfSums T f x (n + 1)) := by
   exact Finset.sup'_mono (fun k ↦ birkhoffSum T f (k + 1) x)
     (Finset.range_subset.mpr (Nat.le.step Nat.le.refl)) Finset.nonempty_range_succ
 
-/-- The `maxOfSums` is monotone. -/
+/-- `maxOfSums` is monotone (explict version). -/
 theorem maxOfSums_le_le (x : α) (m n : ℕ) (hmn : m ≤ n) :
     (maxOfSums T f x m) ≤ (maxOfSums T f x n) := by
   induction' n with n hi
@@ -55,7 +55,7 @@ theorem maxOfSums_le_le (x : α) (m n : ℕ) (hmn : m ≤ n) :
   exact le_trans (hi hc) (maxOfSums_succ_le T f x n)
   rw [hc]
 
-/-- The `maxOfSums` is monotone.
+/-- `maxOfSums` is monotone.
 (Uncertain which is the best phrasing to keep of these options.) -/
 theorem maxOfSums_le_le' (x : α) : Monotone (fun n ↦ maxOfSums T f x n) := by
   unfold Monotone
@@ -66,10 +66,11 @@ open Filter in
 /-- The set of divergent points `{ x | sup_n ∑_{i=0}^{n} f(T^i x) = ∞}`. -/
 def divSet := { x : α | Tendsto (fun n ↦ maxOfSums T f x n) atTop atTop }
 
+open Filter in
 /-- The set of divergent points is invariant. -/
 theorem divSet_inv : T⁻¹' (divSet T f) = (divSet T f) := by
 
-  sorry
+    sorry
 
 /-- Convenient combination of `birkhoffSum` terms. -/
 theorem birkhoffSum_succ_image (n : ℕ) (x : α) :
@@ -197,9 +198,7 @@ theorem maxOfSums_succ_image (n : ℕ) (x : α) :
     exact min_eq_left h8
   rw [h9, h6, h7]
 
-
-
-
+  sorry
 
 
 -------------------------------------------------------------------
