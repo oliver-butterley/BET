@@ -194,21 +194,22 @@ theorem maxOfSums_succ_image (n : ℕ) (x : α) :
 
   sorry
 
-theorem maxOfSums_le_maxOfSums (n : ℕ) : maxOfSums T f (T x) n ≤ maxOfSums T f x (n + 1) - f x := by
-    -- take advantage of claim 1 (but we could argue directly)
-    have ha := maxOfSums_succ_image T f n x
-    -- use cases to deal with min
-    by_cases hc : 0 ≤ maxOfSums T f (T x) n
-    · have hm : min 0 (maxOfSums T f (T x) n) = 0 := by
-        exact min_eq_iff.mpr (Or.inl { left := rfl, right := hc })
-      rw [hm, sub_zero] at ha
-      rw [eq_add_of_sub_eq' ha, add_sub_cancel]
-    · have hm : min 0 (maxOfSums T f (T x) n) = maxOfSums T f (T x) n := by
-        rw [not_le] at hc
-        exact min_eq_right_of_lt hc
-      rw [hm, sub_left_inj] at ha
-      rw [ha, sub_self]
-      exact le_of_not_le hc
+theorem maxOfSums_le_maxOfSums (x : α) (n : ℕ) :
+      maxOfSums T f (T x) n ≤ maxOfSums T f x (n + 1) - f x := by
+  -- take advantage of claim 1 (but we could argue directly)
+  have ha := maxOfSums_succ_image T f n x
+  -- use cases to deal with min
+  by_cases hc : 0 ≤ maxOfSums T f (T x) n
+  · have hm : min 0 (maxOfSums T f (T x) n) = 0 := by
+      exact min_eq_iff.mpr (Or.inl { left := rfl, right := hc })
+    rw [hm, sub_zero] at ha
+    rw [eq_add_of_sub_eq' ha, add_sub_cancel]
+  · have hm : min 0 (maxOfSums T f (T x) n) = maxOfSums T f (T x) n := by
+      rw [not_le] at hc
+      exact min_eq_right_of_lt hc
+    rw [hm, sub_left_inj] at ha
+    rw [ha, sub_self]
+    exact le_of_not_le hc
 
 
 
@@ -228,6 +229,7 @@ theorem divSet_inv : T⁻¹' (divSet T f) = (divSet T f) := by
 
       -- we take advantage of claim 1
       have ha (n : ℕ) := maxOfSums_succ_image T f n x
+      -- instead we could work with `have ha (n : ℕ) := maxOfSums_le_maxOfSums T f x n`
 
       -- since `maxOfSums T f (T x) n` → ∞, eventually `min 0 (maxOfSums T f (T x) n) = 0`
       have h1 : ∀ᶠ n in atTop, min 0 (maxOfSums T f (T x) n) = 0 := by
@@ -270,7 +272,9 @@ theorem divSet_inv : T⁻¹' (divSet T f) = (divSet T f) := by
 
       -- we take advantage of claim 1
       have ha (n : ℕ) := maxOfSums_succ_image T f n x
+      have hb (n : ℕ) := maxOfSums_le_maxOfSums T f x n   
 
+      
       have h0 : Tendsto (fun n ↦ maxOfSums T f x (n + 1)) atTop atTop := by
         exact (tendsto_add_atTop_iff_nat 1).mpr hx
 
@@ -278,7 +282,6 @@ theorem divSet_inv : T⁻¹' (divSet T f) = (divSet T f) := by
         by_contra hc
         push_neg at hc
 
-        -- have h6 : Monotone (fun n ↦ maxOfSums T f (T x) n) := maxOfSums_le_le' T f (T x)
         have h4 := unbounded_of_tendsto_atTop h0
 
         have h5 : BddAbove (Set.range fun n ↦ maxOfSums T f (T x) n) := by
